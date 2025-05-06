@@ -1,0 +1,15 @@
+<html>
+  <head>
+    <style>
+        {{{rootCssContent}}}
+        {{{sectionCss}}}
+    </style>
+  </head>
+  <body>
+    {{#each sections}}
+      <div class="section section-{{@index}}">
+        {{{bodyHtml}}}
+      </div>
+    {{/each}}
+  </body>
+</html>

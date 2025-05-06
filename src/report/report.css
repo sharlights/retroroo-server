@@ -1,0 +1,19 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 19px;
+}
+.section {
+    page-break-after: always;
+}
+table {
+    width: 99%;
+    border-collapse: collapse;
+    margin-top: 19px;
+}
+table, th, td {
+    border: 0px solid #ccc;
+}
+th, td {
+    padding: 9px;
+    text-align: left;
+}
