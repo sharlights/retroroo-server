@@ -3,7 +3,6 @@ import { BoardService } from './board.service';
 import { AuthService } from '../auth/auth.service';
 import { ListsService } from '../lists/lists.service';
 import { JwtPayload } from '../auth/jtw.payload.interface';
-import { RetroList } from '../lists/model/list.model';
 
 @Controller('board')
 export class BoardController {
@@ -68,6 +67,6 @@ export class BoardController {
       },
       user,
     );
-    return { boardId: board.id, token: this.authService.signPayload(user)};
+    return { boardId: board.id, token: this.authService.signPayload(user) };
   }
 }
