@@ -5,12 +5,12 @@ import {
   Res,
   BadRequestException,
 } from '@nestjs/common';
-import { InviteService } from '../invite/invite.service';
-import { AuthService } from './auth.service';
 import { Response } from 'express';
+import { AuthService } from 'src/auth/auth.service';
+import { InviteService } from './invite.service';
 
-@Controller('auth')
-export class AuthController {
+@Controller('invite')
+export class InviteController {
   constructor(
     private readonly inviteService: InviteService,
     private readonly authService: AuthService,
@@ -30,4 +30,7 @@ export class AuthController {
     // Redirect with JWT (or return directly)
     return res.redirect(`/retro?jwt=${jwt}`);
   }
+
+
+
 }

@@ -13,7 +13,7 @@ import { ConfigService } from '@nestjs/config';
 @WebSocketGateway()
 export class InviteGateway {
   constructor(
-    private readonly inviteService: InviteService,
+    private inviteService: InviteService,
     private configService: ConfigService,
   ) {}
 

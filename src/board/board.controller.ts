@@ -12,7 +12,7 @@ export class BoardController {
     private listService: ListsService,
   ) {}
 
-  @Post('new')
+  @Post('create')
   createNewBoard() {
     const board = this.boardService.getOrCreateBoard();
 

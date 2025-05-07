@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { JwtPayload } from 'src/auth/jtw.payload.interface';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class InviteService {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(private readonly authService: AuthService) {}
 
   createInviteToken(
     boardId: string,
@@ -15,12 +15,12 @@ export class InviteService {
       boardId,
       role,
     };
-    return this.jwtService.sign(payload);
+    return this.authService.signPayload(payload);
   }
 
   verifyInviteToken(token: string): JwtPayload | null {
     try {
-      return this.jwtService.verify<JwtPayload>(token);
+      return this.authService.validateToken(token);
     } catch {
       return null;
     }
