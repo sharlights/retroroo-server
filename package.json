@@ -24,6 +24,7 @@
     "@nestjs/core": "^11.1.0",
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/websockets": "^11.1.0",
+    "@nestjs/platform-socket.io": "^11.1.0",
     "@nestjs/config": "^4.0.2",
     "socket.io": "^4.8.1",
     "@nestjs/platform-express": "^11.1.0",
