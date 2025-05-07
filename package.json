@@ -22,7 +22,9 @@
   "dependencies": {
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
+    "@nestjs/jwt": "^11.0.0",
     "@nestjs/websockets": "^11.1.0",
+    "@nestjs/config": "^4.0.2",
     "socket.io": "^4.8.1",
     "@nestjs/platform-express": "^11.1.0",
     "handlebars": "^4.7.8",

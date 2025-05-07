@@ -1,3 +1,12 @@
+# Authentication Flow
+1. User clicks magic link → /auth/magic-link/verify?token=abc123
+2. AuthController verifies token → issues JWT
+3. Frontend receives JWT (/retro?jwt=...)
+4. Client connects to socket with JWT:
+5. BoardGateway validates JWT and joins board room
+
+
+
 ## Description
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
