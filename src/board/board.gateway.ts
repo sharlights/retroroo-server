@@ -11,7 +11,7 @@ import { WsException } from '@nestjs/websockets';
 import { AuthService } from '../auth/auth.service';
 import { JwtPayload } from '../auth/jtw.payload.interface';
 
-@WebSocketGateway({ namespace: '/retro' })
+@WebSocketGateway()
 export class BoardGateway implements OnGatewayConnection {
   @WebSocketServer() server: Server;
 

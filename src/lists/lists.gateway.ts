@@ -16,7 +16,7 @@ import {
 } from './dto/card.dto';
 import { JwtPayload } from '../auth/jtw.payload.interface';
 
-@WebSocketGateway({ namespace: '/retro' })
+@WebSocketGateway()
 export class ListsGateway {
   @WebSocketServer() server: Server;
 
@@ -85,6 +85,16 @@ export class ListsGateway {
     this.server.to(dto.boardId).emit('list:card:created', card);
   }
 
+  // Initial State
+  @SubscribeMessage('lists:get')
+  handleGetState(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() boardId: string,
+  ) {
+    const user: JwtPayload = socket.data.user;
+    return this.service.getBoardLists(boardId, user);
+  }
+
   @SubscribeMessage('list:card:delete')
   handleDeleteCard(
     @ConnectedSocket() socket: Socket,
@@ -115,13 +125,4 @@ export class ListsGateway {
     this.server.to(dto.boardId).emit('list:card:moved', card);
   }
 
-  // Initial State
-  @SubscribeMessage('retro:state:get')
-  handleGetState(
-    @ConnectedSocket() socket: Socket,
-    @MessageBody() boardId: string,
-  ) {
-    const user: JwtPayload = socket.data.user;
-    return this.service.getBoardLists(boardId, user);
-  }
 }

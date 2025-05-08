@@ -1,29 +1,28 @@
 import { io } from 'socket.io-client';
 import axios from 'axios';
 
-async function createNewBoard(): Promise<string> {
+async function createNewBoard(): Promise<{ token: string; boardId: string }> {
   const res = await axios.post('http://localhost:49185/board/create');
-  return res.data.token;
+  return { token: res.data.token, boardId: res.data.boardId };
 }
 
 async function run() {
-  const token = await createNewBoard();
+  const { token, boardId } = await createNewBoard();
 
   const socket = io('http://localhost:49185', {
     auth: { token },
   });
 
   socket.on('connect', () => {
-    console.log('✅ Connected as', socket.id);
-    socket.emit('board:connect');
-  });
+    console.log('✅ Connected');
 
-  socket.onAny((event, data) => {
-    console.log('📩 Received:', event, data);
-  });
+    socket.on('connect_error', (err) => {
+      console.error('❌ Connect error:', err.message);
+    });
 
-  socket.on('connect_error', (err) => {
-    console.error('❌ Connect error:', err.message);
+    socket.emit('lists:get', boardId, (data: any) => {
+      console.log('📩 Got response:', data);
+    });
   });
 }
 
