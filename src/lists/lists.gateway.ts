@@ -80,9 +80,11 @@ export class ListsGateway {
     @ConnectedSocket() socket: Socket,
     @MessageBody() dto: CreateCardDto,
   ) {
+    console.log('at create event');
     const user: JwtPayload = socket.data.user;
+    console.log('user:', user);
     const card = this.service.createCard(dto, user);
-    this.server.to(dto.boardId).emit('list:card:created', card);
+    this.server.to(user.boardId).emit('list:card:created', card);
   }
 
   // Initial State
@@ -102,7 +104,7 @@ export class ListsGateway {
   ) {
     const user: JwtPayload = socket.data.user;
     this.service.deleteCard(dto, user);
-    this.server.to(dto.boardId).emit('list:card:deleted', dto.cardId);
+    this.server.to(user.boardId).emit('list:card:deleted', dto.cardId);
   }
 
   @SubscribeMessage('list:card:update')
@@ -112,7 +114,7 @@ export class ListsGateway {
   ) {
     const user: JwtPayload = socket.data.user;
     const card = this.service.updateCard(dto, user);
-    this.server.to(dto.boardId).emit('list:card:edited', card);
+    this.server.to(user.boardId).emit('list:card:edited', card);
   }
 
   @SubscribeMessage('list:card:move')
@@ -122,7 +124,6 @@ export class ListsGateway {
   ) {
     const user: JwtPayload = socket.data.user;
     const card = this.service.moveCard(dto, user);
-    this.server.to(dto.boardId).emit('list:card:moved', card);
+    this.server.to(user.boardId).emit('list:card:moved', card);
   }
-
 }

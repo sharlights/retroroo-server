@@ -4,6 +4,8 @@ import {
   Query,
   Res,
   BadRequestException,
+  Post,
+  Body,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from 'src/auth/auth.service';
@@ -16,8 +18,11 @@ export class InviteController {
     private readonly authService: AuthService,
   ) {}
 
-  @Get('magic-link/verify')
-  verifyMagicLink(@Query('token') token: string, @Res() res: Response) {
+  @Post('magic-link/verify')
+  verifyMagicLink(@Body('token') token: string): {
+    jwt: string;
+    boardId: string;
+  } {
     const invite = this.inviteService.verifyInviteToken(token);
     if (!invite) throw new BadRequestException('Invalid or expired link');
 
@@ -27,10 +32,6 @@ export class InviteController {
       role: invite.role,
     });
 
-    // Redirect with JWT (or return directly)
-    return res.redirect(`/retro?jwt=${jwt}`);
+    return { jwt, boardId: invite.boardId };
   }
-
-
-
 }

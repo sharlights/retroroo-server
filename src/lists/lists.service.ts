@@ -28,6 +28,7 @@ export class ListsService {
       throw new ForbiddenException('Invalid Permissions');
 
     const listClone: RetroList = { ...newList };
+    listClone.id = crypto.randomUUID();
 
     // Push the list clone into the existing list.
     const boardLists = this.lists.get(user.boardId) || [];
@@ -79,10 +80,7 @@ export class ListsService {
    * @param user The user creating the card.
    */
   createCard(cardToCreate: CreateCardDto, user: JwtPayload) {
-    if (user.boardId != cardToCreate.boardId)
-      throw new ForbiddenException('Invalid Permissions');
-
-    const lists = this.lists.get(cardToCreate.boardId) || [];
+    const lists = this.lists.get(user.boardId) || [];
     const list = lists.find((l) => l.id === cardToCreate.listId);
     if (!list) throw new NotFoundException('List not found');
 
@@ -93,14 +91,15 @@ export class ListsService {
     };
 
     list.cards.push(newCard);
-    return newCard;
+
+    return {
+      ...newCard,
+      clientId: cardToCreate.clientId,
+    };
   }
 
   deleteCard(cardToDelete: DeleteCardDto, user: JwtPayload) {
-    if (user.boardId != cardToDelete.boardId)
-      throw new ForbiddenException('Invalid Permissions');
-
-    const lists = this.lists.get(cardToDelete.boardId) || [];
+    const lists = this.lists.get(user.boardId) || [];
     const list = lists.find((l) => l.id === cardToDelete.listId);
     if (!list) throw new NotFoundException('List not found');
 
@@ -108,10 +107,7 @@ export class ListsService {
   }
 
   updateCard(cardToUpdate: UpdateCardDto, user: JwtPayload) {
-    if (user.boardId != cardToUpdate.boardId)
-      throw new ForbiddenException('Invalid Permissions');
-
-    const lists = this.lists.get(cardToUpdate.boardId) || [];
+    const lists = this.lists.get(user.boardId) || [];
     const list = lists.find((l) => l.id === cardToUpdate.listId);
     if (!list) throw new NotFoundException('List not found');
 
@@ -123,10 +119,7 @@ export class ListsService {
   }
 
   moveCard(moveDto: MoveCardDto, user: JwtPayload) {
-    if (user.boardId != moveDto.boardId)
-      throw new ForbiddenException('Invalid Permissions');
-
-    const lists = this.lists.get(moveDto.boardId) || [];
+    const lists = this.lists.get(user.boardId) || [];
     const fromList = lists.find((l) => l.id === moveDto.fromListId);
     if (!fromList) throw new NotFoundException('From List not found');
     const toList = lists.find((l) => l.id === moveDto.toListId);
