@@ -3,7 +3,7 @@ import {
   SubscribeMessage,
   WebSocketServer,
   ConnectedSocket,
-  OnGatewayConnection,
+  OnGatewayConnection, OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { BoardService } from './board.service';
@@ -12,13 +12,17 @@ import { AuthService } from '../auth/auth.service';
 import { JwtPayload } from '../auth/jtw.payload.interface';
 
 @WebSocketGateway()
-export class BoardGateway implements OnGatewayConnection {
+export class BoardGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
   constructor(
     private readonly boardService: BoardService,
     private readonly authService: AuthService,
   ) {}
+
+  handleDisconnect(client: Socket) {
+    this.server.emit('user:left', { socketId: client.id });
+  }
 
   /**
    * The handleConnection() method comes from the OnGatewayConnection lifecycle interface in NestJS.

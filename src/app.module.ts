@@ -4,6 +4,7 @@ import { BoardModule } from './board/board.module';
 import { AuthModule } from './auth/auth.module';
 import { InviteModule } from './invite/invite.module';
 import { ConfigModule } from '@nestjs/config';
+import { PresenceModule } from './presence/presence.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ConfigModule } from '@nestjs/config';
       envFilePath: `.env.${process.env.NODE_ENV || 'dev'}`,
       isGlobal: true,
     }),
+    PresenceModule,
   ],
 })
 export class AppModule {}
