@@ -6,23 +6,12 @@ import { AuthService } from '../auth/auth.service';
 export class InviteService {
   constructor(private readonly authService: AuthService) {}
 
-  createInviteToken(
-    boardId: string,
-    role: 'facilitator' | 'participant',
-  ): string {
+  createInviteToken(boardId: string, role: 'facilitator' | 'participant'): string {
     const payload: JwtPayload = {
       sub: 'invite-' + Math.random().toString(36).substring(2, 10),
       boardId,
       role,
     };
     return this.authService.signPayload(payload);
-  }
-
-  verifyInviteToken(token: string): JwtPayload | null {
-    try {
-      return this.authService.validateToken(token);
-    } catch {
-      return null;
-    }
   }
 }

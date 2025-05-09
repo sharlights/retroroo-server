@@ -26,10 +26,7 @@ export class AuthService {
    * @param boardId The board.
    * @param role The user role.
    */
-  createUserForBoard(
-    boardId: string,
-    role: 'facilitator' | 'participant',
-  ): User {
+  createUser(boardId: string, role: 'facilitator' | 'participant'): User {
     const newUser = {
       id: crypto.randomUUID(),
       boardId: boardId,
@@ -54,5 +51,4 @@ export class AuthService {
     const boardUsers = this.users.get(boardId);
     return boardUsers.get(sub);
   }
-
 }
