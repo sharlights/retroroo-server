@@ -15,6 +15,7 @@ import {
   MoveCardDto,
 } from './dto/card.dto';
 import { JwtPayload } from '../auth/jtw.payload.interface';
+import { User } from '../auth/user.interface';
 
 @WebSocketGateway()
 export class ListsGateway {
@@ -28,7 +29,7 @@ export class ListsGateway {
     @ConnectedSocket() socket: Socket,
     @MessageBody() dto: CreateListDto,
   ) {
-    const user: JwtPayload = socket.data.user;
+    const user: User = socket.data.user;
     const list = this.service.createList(
       {
         title: dto.title,
@@ -69,7 +70,7 @@ export class ListsGateway {
     @ConnectedSocket() socket: Socket,
     @MessageBody() dto: DeleteListDto,
   ) {
-    const user: JwtPayload = socket.data.user;
+    const user: User = socket.data.user;
     this.service.deleteList(dto, user);
     this.server.to(dto.boardId).emit('list:deleted', dto.listId);
   }
@@ -80,9 +81,7 @@ export class ListsGateway {
     @ConnectedSocket() socket: Socket,
     @MessageBody() dto: CreateCardDto,
   ) {
-    console.log('at create event');
-    const user: JwtPayload = socket.data.user;
-    console.log('user:', user);
+    const user: User = socket.data.user;
     const card = this.service.createCard(dto, user);
     this.server.to(user.boardId).emit('list:card:created', card);
   }
@@ -93,7 +92,7 @@ export class ListsGateway {
     @ConnectedSocket() socket: Socket,
     @MessageBody() boardId: string,
   ) {
-    const user: JwtPayload = socket.data.user;
+    const user: JwtPayload = socket.data.jwtPayload;
     return this.service.getBoardLists(boardId, user);
   }
 

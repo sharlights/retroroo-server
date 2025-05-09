@@ -16,11 +16,7 @@ export class BoardController {
   createNewBoard() {
     const board = this.boardService.getOrCreateBoard();
 
-    const user: JwtPayload = {
-      sub: 'anonymous-' + Math.random().toString(36).substring(2, 10),
-      boardId: board.id,
-      role: 'facilitator',
-    };
+    const user = this.authService.createUserForBoard(board.id, 'facilitator');
 
     // Create basic board
     this.listService.createList(
@@ -67,6 +63,11 @@ export class BoardController {
       },
       user,
     );
-    return { boardId: board.id, token: this.authService.signPayload(user) };
+    return {
+      boardId: board.id,
+      token: this.authService.signPayload(
+        this.authService.createJtwPayload(user),
+      ),
+    };
   }
 }

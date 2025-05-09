@@ -13,6 +13,7 @@ import {
 import { RetroList } from './model/list.model';
 import { JwtPayload } from 'src/auth/jtw.payload.interface';
 import { RetroCard } from './model/card.model';
+import { User } from '../auth/user.interface';
 
 @Injectable()
 export class ListsService {
@@ -23,7 +24,7 @@ export class ListsService {
    * @param newList The new list.
    * @param user The user making the request.
    */
-  createList(newList: RetroList, user: JwtPayload) {
+  createList(newList: RetroList, user: User) {
     if (user.role !== 'facilitator' || user.boardId != newList.boardId)
       throw new ForbiddenException('Invalid Permissions');
 
@@ -60,7 +61,7 @@ export class ListsService {
    * @param dto The list to delete.
    * @param user The user making the request.
    */
-  deleteList(dto: DeleteListDto, user: JwtPayload) {
+  deleteList(dto: DeleteListDto, user: User) {
     if (user.role !== 'facilitator' || user.boardId != dto.boardId)
       throw new ForbiddenException('Invalid Permissions');
 
@@ -79,13 +80,14 @@ export class ListsService {
    * @param cardToCreate the new card.
    * @param user The user creating the card.
    */
-  createCard(cardToCreate: CreateCardDto, user: JwtPayload) {
+  createCard(cardToCreate: CreateCardDto, user: User) {
     const lists = this.lists.get(user.boardId) || [];
     const list = lists.find((l) => l.id === cardToCreate.listId);
     if (!list) throw new NotFoundException('List not found');
 
     const newCard: RetroCard = {
       id: crypto.randomUUID(),
+      creatorId: user.id,
       listId: cardToCreate.listId,
       message: cardToCreate.message,
     };

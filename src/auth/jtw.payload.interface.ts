@@ -1,7 +1,7 @@
 export interface JwtPayload {
-  sub: string; // user ID
-  boardId: string;
+  sub: string;
   role: 'facilitator' | 'participant';
+  boardId: string;
   iat?: number;
   exp?: number;
 }
