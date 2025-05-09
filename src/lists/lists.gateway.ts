@@ -75,7 +75,6 @@ export class ListsGateway {
     this.server.to(dto.boardId).emit('list:deleted', dto.listId);
   }
 
-  // Card Events
   @SubscribeMessage('list:card:create')
   handleCreateCard(
     @ConnectedSocket() socket: Socket,
@@ -86,13 +85,12 @@ export class ListsGateway {
     this.server.to(user.boardId).emit('list:card:created', card);
   }
 
-  // Initial State
   @SubscribeMessage('lists:get')
   handleGetState(
     @ConnectedSocket() socket: Socket,
     @MessageBody() boardId: string,
   ) {
-    const user: JwtPayload = socket.data.jwtPayload;
+    const user: User = socket.data.user;
     return this.service.getBoardLists(boardId, user);
   }
 

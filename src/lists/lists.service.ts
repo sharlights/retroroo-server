@@ -143,7 +143,7 @@ export class ListsService {
     return { ...card, toListId: moveDto.toListId, newIndex: insertAt };
   }
 
-  getBoardLists(boardId: string, user: JwtPayload) {
+  getBoardLists(boardId: string, user: User) {
     if (user.boardId != boardId)
       throw new ForbiddenException('Invalid Permissions');
 
