@@ -7,7 +7,7 @@ import { User } from './user.interface';
 export class AuthService {
   constructor(private readonly jwtService: JwtService) {}
 
-  private users: Map<string, Map<string, User>> = new Map<string, Map<string, User>>(); // boardId -> map<userId, User>
+  private users: Map<string, User> = new Map<string, User>(); // boardId -> map<userId, User>
 
   validateToken(token: string): JwtPayload | null {
     try {
@@ -33,19 +33,11 @@ export class AuthService {
       role,
     };
 
-    let usersInBoard = this.users.get(boardId);
-    if (!usersInBoard) {
-      // Create new user board if it doesn't exist.
-      usersInBoard = new Map<string, User>();
-      this.users.set(boardId, usersInBoard);
-    }
-
-    usersInBoard.set(newUser.id, newUser);
+    this.users.set(newUser.id, newUser);
     return newUser;
   }
 
-  getUser(boardId: string, sub: string): User {
-    const boardUsers = this.users.get(boardId);
-    return boardUsers.get(sub);
+  getUser(sub: string): User {
+    return this.users.get(sub);
   }
 }

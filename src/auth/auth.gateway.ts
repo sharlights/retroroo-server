@@ -24,7 +24,7 @@ export class AuthGateway implements OnGatewayConnection {
     const token = socket.handshake.auth?.token;
     const payload = this.authService.validateToken(token);
 
-    const user = this.authService.getUser(payload.boardId, payload.sub);
+    const user = this.authService.getUser(payload.sub);
     if (!user) {
       socket.disconnect(); // Invalid token.
     }

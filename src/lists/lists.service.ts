@@ -144,8 +144,7 @@ export class ListsService {
   }
 
   getBoardLists(boardId: string, user: User) {
-    if (user.boardId != boardId)
-      throw new ForbiddenException('Invalid Permissions');
+    if (user.boardId != boardId) throw new ForbiddenException('Invalid Permissions');
 
     return this.lists.get(boardId) || [];
   }
