@@ -7,5 +7,6 @@ import { ListsModule } from '../lists/lists.module';
 @Module({
   imports: [AuthModule, ListsModule],
   providers: [BoardService, BoardGateway],
+  exports: [BoardService],
 })
 export class BoardModule {}

@@ -8,11 +8,10 @@ import {
 import { Server, Socket } from 'socket.io';
 import { WsException } from '@nestjs/websockets';
 import { AuthService } from './auth.service';
-import { JwtPayload } from './jtw.payload.interface';
 import { User } from './user.interface';
 
 @WebSocketGateway()
-export class BoardGateway implements OnGatewayConnection {
+export class AuthGateway implements OnGatewayConnection {
   @WebSocketServer() server: Server;
 
   constructor(private readonly authService: AuthService) {}
@@ -25,6 +24,7 @@ export class BoardGateway implements OnGatewayConnection {
     const token = socket.handshake.auth?.token;
     const payload = this.authService.validateToken(token);
 
+    console.log('payload ', payload);
     const user = this.authService.getUser(payload.boardId, payload.sub);
     if (!user) {
       // Invalid token.

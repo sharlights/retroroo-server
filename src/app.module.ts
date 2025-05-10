@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { InviteModule } from './invite/invite.module';
 import { ConfigModule } from '@nestjs/config';
 import { PresenceModule } from './presence/presence.module';
+import { RegisterModule } from './register/register.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { PresenceModule } from './presence/presence.module';
       isGlobal: true,
     }),
     PresenceModule,
+    RegisterModule,
   ],
 })
 export class AppModule {}

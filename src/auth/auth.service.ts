@@ -32,23 +32,21 @@ export class AuthService {
       boardId: boardId,
       role,
     };
-    const usersInBoard = this.users.get(boardId) || new Map<string, User>();
-    if (!usersInBoard.has(newUser.id)) {
-      usersInBoard.set(newUser.id, newUser);
-    }
-    return newUser;
-  }
 
-  createJtwPayload(user: User): JwtPayload {
-    return {
-      sub: user.id,
-      role: user.role,
-      boardId: user.boardId,
-    };
+    let usersInBoard = this.users.get(boardId);
+    if (!usersInBoard) {
+      // Create new user board if it doesn't exist.
+      usersInBoard = new Map<string, User>();
+      this.users.set(boardId, usersInBoard);
+    }
+
+    usersInBoard.set(boardId, newUser);
+    return newUser;
   }
 
   getUser(boardId: string, sub: string): User {
     const boardUsers = this.users.get(boardId);
+    console.log('users:', boardUsers);
     return boardUsers.get(sub);
   }
 }

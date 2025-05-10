@@ -1,10 +1,9 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { ListsService } from '../lists/lists.service';
 import { BoardService } from '../board/board.service';
-import { AuthService } from './auth.service';
+import { AuthService } from '../auth/auth.service';
 
-@Controller('auth')
-export class BoardController {
+@Controller()
+export class RegisterController {
   constructor(
     private boardService: BoardService,
     private authService: AuthService,
