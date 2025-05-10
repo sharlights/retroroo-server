@@ -24,12 +24,9 @@ export class AuthGateway implements OnGatewayConnection {
     const token = socket.handshake.auth?.token;
     const payload = this.authService.validateToken(token);
 
-    console.log('payload ', payload);
     const user = this.authService.getUser(payload.boardId, payload.sub);
     if (!user) {
-      // Invalid token.
-      socket.disconnect();
-      throw new WsException('Unauthorized');
+      socket.disconnect(); // Invalid token.
     }
 
     // Join the room associated to the JTW token.

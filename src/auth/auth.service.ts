@@ -40,13 +40,12 @@ export class AuthService {
       this.users.set(boardId, usersInBoard);
     }
 
-    usersInBoard.set(boardId, newUser);
+    usersInBoard.set(newUser.id, newUser);
     return newUser;
   }
 
   getUser(boardId: string, sub: string): User {
     const boardUsers = this.users.get(boardId);
-    console.log('users:', boardUsers);
     return boardUsers.get(sub);
   }
 }
