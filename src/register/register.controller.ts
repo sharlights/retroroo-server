@@ -35,7 +35,7 @@ export class RegisterController {
     });
 
     return {
-      boardId: user.id,
+      boardId: user.boardId,
       token,
     };
   }

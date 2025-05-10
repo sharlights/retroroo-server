@@ -65,8 +65,6 @@ export class ListsGateway {
   @SubscribeMessage('lists:get')
   handleGetState(@ConnectedSocket() socket: Socket, @MessageBody() boardId: string) {
     const user: User = socket.data.user;
-    const lists = this.service.getBoardLists(boardId, user);
-    console.log('lists', lists);
     return this.service.getBoardLists(boardId, user);
   }
 
