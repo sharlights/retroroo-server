@@ -1,10 +1,4 @@
-import {
-  ConnectedSocket,
-  MessageBody,
-  SubscribeMessage,
-  WebSocketGateway,
-  WsException,
-} from '@nestjs/websockets';
+import { ConnectedSocket, SubscribeMessage, WebSocketGateway, WsException } from '@nestjs/websockets';
 import { InviteService } from './invite.service';
 import { Socket } from 'socket.io';
 import { JwtPayload } from '../auth/jtw.payload.interface';
@@ -18,13 +12,9 @@ export class InviteGateway {
     const user: JwtPayload = socket.data.user;
 
     // Anyone can invite, they only have to be associated to a retrospective.
-    if (!user || user.role != 'facilitator')
-      throw new WsException('Unauthorized');
+    if (!user || user.role != 'facilitator') throw new WsException('Unauthorized');
 
-    const token = this.inviteService.createInviteToken(
-      user.boardId,
-      'participant',
-    );
+    const token = this.inviteService.createInviteToken(user.boardId, 'participant');
     return { invite_token: token };
   }
 }
