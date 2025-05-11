@@ -3,7 +3,8 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
   WebSocketServer,
-  SubscribeMessage, ConnectedSocket,
+  SubscribeMessage,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { PresenceService } from './presence.service';
