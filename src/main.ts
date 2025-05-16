@@ -1,17 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { RetroRooSocketIoAdapter } from './auth/socket.io.adapter';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
+  const origin = configService.get<string>('CORS_ORIGIN');
+
+  // CORS management for socket & http requests.
   app.enableCors({
-    origin: 'http://localhost:4200', // Allow requests from this origin
+    origin: origin, // Allow requests from this origin
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed HTTP methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
     credentials: true, // Allow credentials (e.g., cookies, authorization headers
   });
-  app.useWebSocketAdapter(new RetroRooSocketIoAdapter(app));
-  await app.listen(49185);
+  app.useWebSocketAdapter(new RetroRooSocketIoAdapter(app, configService));
+  await app.listen(49185, '0.0.0.0');
 }
 bootstrap();
