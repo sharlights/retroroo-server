@@ -10,6 +10,11 @@ interface ExerciseRequest {
   exerciseId?: string;
 }
 
+interface ActionRequest {
+  action: string;
+  payload: any;
+}
+
 @WebSocketGateway()
 export class HeadspaceGateway {
   @WebSocketServer() server: Server;
@@ -82,6 +87,29 @@ export class HeadspaceGateway {
       return data;
     } catch (err) {
       return err;
+    }
+  }
+
+  /** participants call this for any game-specific event */
+  @SubscribeMessage('board:headspace:exercise:action')
+  async onAction(@ConnectedSocket() socket: Socket, @MessageBody() { action, payload }: ActionRequest) {
+    const user = socket.data.user as JwtPayload;
+    const board = this.boardService.getBoard(user.boardId);
+    let exercise;
+
+    try {
+      exercise = this.headspaceService.getActiveExercise(board.id);
+      exercise.handleAction(user.sub, action, payload);
+
+      // broadcast to everyone what just happened
+      this.server.to(board.id).emit('headspace:exercise:action', {
+        exerciseId: exercise.exerciseId,
+        action,
+        userId: user.sub,
+        payload,
+      });
+    } catch (err: any) {
+      return new SocketErrorResponse('BAD_REQUEST', err.message);
     }
   }
 }

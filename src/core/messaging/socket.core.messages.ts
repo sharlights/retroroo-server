@@ -19,6 +19,6 @@ export class SocketErrorResponse {
   }
 }
 
-export type ErrorCode = 'FORBIDDEN' | 'NOT_FOUND';
+export type ErrorCode = 'FORBIDDEN' | 'NOT_FOUND' | 'BAD_REQUEST';
 
 export type SocketResponse<T = any> = SocketSuccessResponse<T> | SocketErrorResponse;

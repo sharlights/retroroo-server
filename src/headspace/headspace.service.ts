@@ -31,7 +31,7 @@ export class HeadspaceService {
   /** Map of exerciseId → factory for creating a new game */
   private registry = new Map<string, ExerciseFactory>();
   /** One active game instance per board.id */
-  private exercises = new Map<string, HeadspaceExercise>();
+  private activeExercises = new Map<string, HeadspaceExercise>();
 
   constructor() {
     // Register built-in games here
@@ -42,39 +42,44 @@ export class HeadspaceService {
     const exerciseFactory = this.registry.get(exerciseId);
     if (!exerciseFactory) throw new ExerciseNotFoundException();
     const exercise = exerciseFactory(board);
-    this.exercises.set(board.id, exercise);
+    this.activeExercises.set(board.id, exercise);
     return exercise;
   }
 
   startExercise(board: Board, onCompleteCallback: (boardId: string) => void): HeadspaceExercise {
-    const exercise = this.exercises.get(board.id);
+    const exercise = this.activeExercises.get(board.id);
 
     if (!exercise || exercise.status !== 'SELECTED') {
       throw new ExerciseNotSelectedException();
     }
 
-    exercise.status = 'IN_PROGRESS';
     exercise.start(() => {
-      this.exercises.delete(board.id);
+      this.activeExercises.delete(board.id);
       onCompleteCallback(board.id);
     });
     return exercise;
   }
 
   stopExercise(board: Board): HeadspaceExercise {
-    const exercise = this.exercises.get(board.id);
+    const exercise = this.activeExercises.get(board.id);
     if (!exercise) throw new ExerciseNotFoundException();
     exercise.stop();
-    this.exercises.delete(board.id);
+    this.activeExercises.delete(board.id);
     return exercise;
   }
 
   resetExercise(board: Board): HeadspaceExercise {
-    const old = this.exercises.get(board.id);
-    if (!old) throw new ExerciseNotFoundException();
-    const exerciseFactory = this.registry.get(old.exerciseId)!;
-    const fresh = exerciseFactory(board);
-    this.exercises.set(board.id, fresh);
-    return fresh;
+    const exercise = this.activeExercises.get(board.id);
+    if (!exercise) throw new ExerciseNotFoundException();
+    exercise.reset();
+    return exercise;
+  }
+
+  getActiveExercise(boardId: string): HeadspaceExercise {
+    const exercise = this.activeExercises.get(boardId);
+    if (!exercise) {
+      throw new ExerciseNotSelectedException();
+    }
+    return exercise;
   }
 }
