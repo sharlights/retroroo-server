@@ -4,7 +4,7 @@ import { JwtPayload } from '../auth/jtw.payload.interface';
 import { SocketErrorResponse } from '../core/messaging/socket.core.messages';
 import { BoardService } from '../board/board.service';
 import { StageService } from '../stage/stage.service';
-import { HeadspaceService } from './headspace.service';
+import { HeadspaceService } from '../headspace/headspace.service';
 
 interface ExerciseRequest {
   exerciseId?: string;

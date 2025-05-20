@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { BoardService } from '../board/board.service';
-import { AuthService } from '../auth/auth.service';
+import { BoardService } from '../board.service';
+import { AuthService } from '../../auth/auth.service';
 
 @Controller()
 export class RegisterController {

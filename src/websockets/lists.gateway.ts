@@ -1,8 +1,8 @@
 import { WebSocketGateway, SubscribeMessage, MessageBody, WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ListsService } from './lists.service';
-import { CreateListDto, UpdateListDto, DeleteListDto } from './dto/list.dto';
-import { CreateCardDto, DeleteCardDto, UpdateCardDto, MoveCardDto } from './dto/card.dto';
+import { ListsService } from '../board/lists/lists.service';
+import { CreateListDto, UpdateListDto, DeleteListDto } from '../board/lists/dto/list.dto';
+import { CreateCardDto, DeleteCardDto, UpdateCardDto, MoveCardDto } from '../board/lists/dto/card.dto';
 import { JwtPayload } from '../auth/jtw.payload.interface';
 import { User } from '../auth/user.interface';
 

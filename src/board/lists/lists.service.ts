@@ -13,7 +13,7 @@ import {
 import { RetroList } from './model/list.model';
 import { JwtPayload } from 'src/auth/jtw.payload.interface';
 import { RetroCard } from './model/card.model';
-import { User } from '../auth/user.interface';
+import { User } from '../../auth/user.interface';
 
 @Injectable()
 export class ListsService {

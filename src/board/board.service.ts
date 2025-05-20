@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Board } from './board.model';
-import { ListsService } from '../lists/lists.service';
+import { ListsService } from './lists/lists.service';
 import { User } from '../auth/user.interface';
 
 @Injectable()

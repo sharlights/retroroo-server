@@ -1,7 +1,7 @@
 import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { AuthService } from './auth.service';
-import { User } from './user.interface';
+import { AuthService } from '../auth/auth.service';
+import { User } from '../auth/user.interface';
 
 @WebSocketGateway()
 export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -19,6 +19,8 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * It’s automatically called by NestJS when a client first connects to the gateway.
    */
   async handleConnection(socket: Socket) {
+    socket.setMaxListeners(30);
+
     const token = socket.handshake.auth?.token;
     const payload = this.authService.validateToken(token);
 

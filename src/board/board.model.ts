@@ -1,5 +1,5 @@
-import { RetroList } from '../lists/model/list.model';
-import { Participant } from './participant.mode';
+import { RetroList } from './lists/model/list.model';
+import { Participant } from './participant.model';
 
 export class Board {
   id: string;

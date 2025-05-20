@@ -1,5 +1,5 @@
 import { ConnectedSocket, SubscribeMessage, WebSocketGateway, WsException } from '@nestjs/websockets';
-import { InviteService } from './invite.service';
+import { InviteService } from '../board/invite/invite.service';
 import { Socket } from 'socket.io';
 import { JwtPayload } from '../auth/jtw.payload.interface';
 

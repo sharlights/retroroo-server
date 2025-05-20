@@ -1,7 +1,7 @@
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { JwtPayload } from '../auth/jtw.payload.interface';
-import { RetroStage, StageService } from './stage.service';
+import { RetroStage, StageService } from '../stage/stage.service';
 import { SocketErrorResponse } from '../core/messaging/socket.core.messages';
 import { BoardService } from '../board/board.service';
 
