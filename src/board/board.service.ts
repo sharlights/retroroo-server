@@ -26,6 +26,7 @@ export class BoardService {
       id: crypto.randomUUID(),
       createdDate: new Date().toISOString(),
       lists: [],
+      participants: [],
     };
 
     this.boards.set(newBoard.id, newBoard);

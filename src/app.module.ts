@@ -13,11 +13,11 @@ import { HeadspaceModule } from './headspace/headspace.module';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     ListsModule,
     BoardModule,
     AuthModule,
     InviteModule,
-    EventEmitterModule,
     ConfigModule.forRoot({
       envFilePath: `.env.${process.env.NODE_ENV || 'dev'}`,
       isGlobal: true,
