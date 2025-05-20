@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Board } from '../board/board.model';
+import { Board } from '../board.model';
 import { HeadspaceExercise } from './exercises/exercise.model';
 import { OneWordExercise } from './exercises/oneword-exercise';
 
@@ -42,34 +42,34 @@ export class HeadspaceService {
     const exerciseFactory = this.registry.get(exerciseId);
     if (!exerciseFactory) throw new ExerciseNotFoundException();
     const exercise = exerciseFactory(board);
-    this.activeExercises.set(board.id, exercise);
+    this.activeExercises.set(board.getId(), exercise);
     return exercise;
   }
 
   startExercise(board: Board, onCompleteCallback: (boardId: string) => void): HeadspaceExercise {
-    const exercise = this.activeExercises.get(board.id);
+    const exercise = this.activeExercises.get(board.getId());
 
     if (!exercise || exercise.status !== 'SELECTED') {
       throw new ExerciseNotSelectedException();
     }
 
     exercise.start(() => {
-      this.activeExercises.delete(board.id);
-      onCompleteCallback(board.id);
+      this.activeExercises.delete(board.getId());
+      onCompleteCallback(board.getId());
     });
     return exercise;
   }
 
   stopExercise(board: Board): HeadspaceExercise {
-    const exercise = this.activeExercises.get(board.id);
+    const exercise = this.activeExercises.get(board.getId());
     if (!exercise) throw new ExerciseNotFoundException();
     exercise.stop();
-    this.activeExercises.delete(board.id);
+    this.activeExercises.delete(board.getId());
     return exercise;
   }
 
   resetExercise(board: Board): HeadspaceExercise {
-    const exercise = this.activeExercises.get(board.id);
+    const exercise = this.activeExercises.get(board.getId());
     if (!exercise) throw new ExerciseNotFoundException();
     exercise.reset();
     return exercise;

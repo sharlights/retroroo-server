@@ -1,6 +1,8 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { BoardService } from '../board.service';
 import { AuthService } from '../../auth/auth.service';
+import * as crypto from 'node:crypto';
+import { User } from '../board.model';
 
 @Controller()
 export class RegisterController {
@@ -20,9 +22,9 @@ export class RegisterController {
     const inviteJwt = this.authService.validateToken(inviteToken);
     const isNewBoard = !inviteJwt;
 
-    const boardId = isNewBoard ? this.boardService.createNewBoard().id : inviteJwt.boardId;
+    const boardId = isNewBoard ? this.boardService.createNewBoard().getId() : inviteJwt.boardId;
     const role = isNewBoard ? 'facilitator' : 'participant';
-    const user = this.authService.createUser(boardId, role);
+    const user = new User(crypto.randomUUID(), boardId, role);
 
     if (isNewBoard) {
       this.boardService.setDefaultTemplate(boardId, user);

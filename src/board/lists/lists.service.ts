@@ -1,19 +1,10 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { DeleteListDto } from './dto/list.dto';
-import {
-  CreateCardDto,
-  DeleteCardDto,
-  UpdateCardDto,
-  MoveCardDto,
-} from './dto/card.dto';
+import { CreateCardDto, DeleteCardDto, UpdateCardDto, MoveCardDto } from './dto/card.dto';
 import { RetroList } from './model/list.model';
 import { JwtPayload } from 'src/auth/jtw.payload.interface';
 import { RetroCard } from './model/card.model';
-import { User } from '../../auth/user.interface';
+import { User } from '../board.model';
 
 @Injectable()
 export class ListsService {
@@ -62,8 +53,7 @@ export class ListsService {
    * @param user The user making the request.
    */
   deleteList(dto: DeleteListDto, user: User) {
-    if (user.role !== 'facilitator' || user.boardId != dto.boardId)
-      throw new ForbiddenException('Invalid Permissions');
+    if (user.role !== 'facilitator' || user.boardId != dto.boardId) throw new ForbiddenException('Invalid Permissions');
 
     const listsInBoard = this.lists.get(dto.boardId);
 
@@ -134,10 +124,7 @@ export class ListsService {
 
     const [card] = fromList.cards.splice(cardIndex, 1);
 
-    const insertAt = Math.max(
-      0,
-      Math.min(moveDto.targetIndex, toList.cards.length),
-    );
+    const insertAt = Math.max(0, Math.min(moveDto.targetIndex, toList.cards.length));
     toList.cards.splice(insertAt, 0, card);
 
     return { ...card, toListId: moveDto.toListId, newIndex: insertAt };

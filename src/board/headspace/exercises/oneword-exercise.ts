@@ -1,4 +1,4 @@
-import { Board } from '../../board/board.model';
+import { Board } from '../../board.model';
 import { ExerciseStatus, HeadspaceExercise } from './exercise.model';
 
 export class OneWordExercise implements HeadspaceExercise {
@@ -41,7 +41,7 @@ export class OneWordExercise implements HeadspaceExercise {
         }
         this.responses.set(userId, payload.word);
         // all participants submitted?
-        if (this.responses.size === this.board.participants.length) {
+        if (this.responses.size === this.board.getUsers().size) {
           this.status = 'COMPLETED';
           this.onComplete();
         }
@@ -53,7 +53,7 @@ export class OneWordExercise implements HeadspaceExercise {
   }
 
   /** handy helper for gateway to surface results */
-  getResults(): Record<string,string> {
+  getResults(): Record<string, string> {
     return Object.fromEntries(this.responses);
   }
 }

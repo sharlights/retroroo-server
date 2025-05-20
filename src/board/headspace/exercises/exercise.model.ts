@@ -1,4 +1,4 @@
-import { Board } from '../../board/board.model';
+import { Board } from '../../board.model';
 
 export type ExerciseStatus = 'COMPLETED' | 'SELECTED' | 'IN_PROGRESS';
 

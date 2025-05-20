@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Board } from '../board/board.model';
+import { Board } from '../board.model';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 export type RetroStage = 'headspace' | 'explore' | 'vote' | 'discuss' | 'done';

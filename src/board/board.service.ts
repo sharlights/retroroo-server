@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Board } from './board.model';
+import { Board, User } from './board.model';
 import { ListsService } from './lists/lists.service';
-import { User } from '../auth/user.interface';
 
 @Injectable()
 export class BoardService {
@@ -9,6 +8,10 @@ export class BoardService {
 
   constructor(private listService: ListsService) {}
 
+  /**
+   * Fetches the board from the given identifier.
+   * @param boardId The identifier.
+   */
   getBoard(boardId: string): Board {
     if (this.boardExists(boardId)) {
       return this.boards.get(boardId);
@@ -16,22 +19,36 @@ export class BoardService {
     return undefined;
   }
 
+  /**
+   * Checks if the given board id already exists.
+   * @param boardId
+   */
   boardExists(boardId: string): boolean {
     return boardId && this.boards.has(boardId);
   }
 
+  /**
+   * Creates a fresh new board.
+   */
   createNewBoard(): Board {
-    // Create a new board
-    const newBoard: Board = {
-      id: crypto.randomUUID(),
-      createdDate: new Date().toISOString(),
-      lists: [],
-      participants: [],
-    };
-
-    this.boards.set(newBoard.id, newBoard);
-
+    const newBoard = new Board(crypto.randomUUID(), new Date().toISOString(), [], new Map<string, User>());
+    this.boards.set(newBoard.getId(), newBoard);
+    console.log(`[Board: ${newBoard.getId()}] Created`);
     return newBoard;
+  }
+
+  /**
+   * Attempts to join the user to the board. The user must not already be connected.
+   * @param boardId The board.
+   * @param user The user being added to the board.
+   */
+  joinBoard(boardId: string, user: User): void {
+    const board = this.boards.get(boardId);
+    board.getUsers().set(user.id, user);
+  }
+
+  getUsers(boardId: string): Map<string, User> | undefined {
+    return this.boards.get(boardId)?.getUsers();
   }
 
   setDefaultTemplate(boardId: string, user: User) {

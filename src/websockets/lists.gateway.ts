@@ -4,7 +4,7 @@ import { ListsService } from '../board/lists/lists.service';
 import { CreateListDto, UpdateListDto, DeleteListDto } from '../board/lists/dto/list.dto';
 import { CreateCardDto, DeleteCardDto, UpdateCardDto, MoveCardDto } from '../board/lists/dto/card.dto';
 import { JwtPayload } from '../auth/jtw.payload.interface';
-import { User } from '../auth/user.interface';
+import { User } from '../board/board.model';
 
 @WebSocketGateway()
 export class ListsGateway {

@@ -1,10 +1,10 @@
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, ConnectedSocket, MessageBody } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtPayload } from '../auth/jtw.payload.interface';
-import { SocketErrorResponse } from '../core/messaging/socket.core.messages';
+import { SocketErrorResponse } from './socket.core.messages';
 import { BoardService } from '../board/board.service';
-import { StageService } from '../stage/stage.service';
-import { HeadspaceService } from '../headspace/headspace.service';
+import { StageService } from '../board/stage/stage.service';
+import { HeadspaceService } from '../board/headspace/headspace.service';
 
 interface ExerciseRequest {
   exerciseId?: string;
@@ -37,7 +37,7 @@ export class HeadspaceGateway {
       this.assertFacilitator(socket.data.user);
       const board = this.boardService.getBoard(socket.data.user.boardId);
       const data = this.headspaceService.selectExercise(board, exerciseId!);
-      this.server.to(board.id).emit('headspace:exercise:selected', data);
+      this.server.to(board.getId()).emit('headspace:exercise:selected', data);
       return data;
     } catch (err) {
       return err;
@@ -57,7 +57,7 @@ export class HeadspaceGateway {
         this.server.to(boardId).emit('stage-changed', { stage: 'explore' });
       });
 
-      this.server.to(board.id).emit('headspace:exercise:started', data);
+      this.server.to(board.getId()).emit('headspace:exercise:started', data);
       return data;
     } catch (err) {
       return err;
@@ -70,7 +70,7 @@ export class HeadspaceGateway {
       this.assertFacilitator(socket.data.user);
       const board = this.boardService.getBoard(socket.data.user.boardId);
       const data = this.headspaceService.stopExercise(board);
-      this.server.to(board.id).emit('headspace:exercise:stopped', data);
+      this.server.to(board.getId()).emit('headspace:exercise:stopped', data);
       return data;
     } catch (err) {
       return err;
@@ -83,7 +83,7 @@ export class HeadspaceGateway {
       this.assertFacilitator(socket.data.user);
       const board = this.boardService.getBoard(socket.data.user.boardId);
       const data = this.headspaceService.resetExercise(board);
-      this.server.to(board.id).emit('headspace:exercise:restarted', data);
+      this.server.to(board.getId()).emit('headspace:exercise:restarted', data);
       return data;
     } catch (err) {
       return err;
@@ -98,11 +98,11 @@ export class HeadspaceGateway {
     let exercise;
 
     try {
-      exercise = this.headspaceService.getActiveExercise(board.id);
+      exercise = this.headspaceService.getActiveExercise(board.getId());
       exercise.handleAction(user.sub, action, payload);
 
       // broadcast to everyone what just happened
-      this.server.to(board.id).emit('headspace:exercise:action', {
+      this.server.to(board.getId()).emit('headspace:exercise:action', {
         exerciseId: exercise.exerciseId,
         action,
         userId: user.sub,
