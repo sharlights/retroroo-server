@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Board, User } from './board.model';
 import { ListsService } from './lists/lists.service';
 
 @Injectable()
 export class BoardService {
   private boards = new Map<string, Board>();
+  private readonly logger = new Logger(BoardService.name);
 
   constructor(private listService: ListsService) {}
 
@@ -15,6 +16,8 @@ export class BoardService {
   getBoard(boardId: string): Board {
     if (this.boardExists(boardId)) {
       return this.boards.get(boardId);
+    } else {
+      this.logger.warn(`Unable to find board ${boardId}`);
     }
     return undefined;
   }
@@ -33,7 +36,7 @@ export class BoardService {
   createNewBoard(): Board {
     const newBoard = new Board(crypto.randomUUID(), new Date().toISOString(), [], new Map<string, User>());
     this.boards.set(newBoard.getId(), newBoard);
-    console.log(`[Board: ${newBoard.getId()}] Created`);
+    this.logger.log(`[Board: ${newBoard.getId()}] Created`);
     return newBoard;
   }
 
@@ -44,11 +47,15 @@ export class BoardService {
    */
   joinBoard(boardId: string, user: User): void {
     const board = this.boards.get(boardId);
-    board.getUsers().set(user.id, user);
+    board?.getUsers().set(user.id, user);
   }
 
   getUsers(boardId: string): Map<string, User> | undefined {
     return this.boards.get(boardId)?.getUsers();
+  }
+
+  getUser(boardId: string, userId: string): User | undefined {
+    return this.boards.get(boardId)?.getUsers().get(userId);
   }
 
   setDefaultTemplate(boardId: string, user: User) {
@@ -97,5 +104,10 @@ export class BoardService {
       },
       user,
     );
+  }
+
+  leaveBoard(boardId: string, user: User) {
+    const board = this.boards.get(boardId);
+    board.getUsers().delete(user.id);
   }
 }

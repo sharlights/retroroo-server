@@ -1,6 +1,7 @@
 import {
   ConnectedSocket,
   OnGatewayConnection,
+  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -8,16 +9,37 @@ import {
 import { Server, Socket } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
 import { BoardService } from '../board/board.service';
-import { User } from '../board/board.model';
+import { Board, User } from '../board/board.model';
+import { Logger } from '@nestjs/common';
 
 @WebSocketGateway()
-export class AuthGateway implements OnGatewayConnection {
+export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
+  private readonly logger = new Logger(AuthGateway.name);
 
   constructor(
     private authService: AuthService,
     private boardService: BoardService,
   ) {}
+
+  handleDisconnect(socket: Socket) {
+    const token = socket.handshake.auth?.token;
+    const payload = this.authService.validateToken(token);
+
+    const board = this.boardService.getBoard(payload.boardId);
+
+    if (board) {
+      const user = this.boardService.getUser(board.getId(), payload.sub);
+
+      this.boardService.leaveBoard(payload.boardId, user);
+
+      this.server.to(board.getId()).emit('board:users:updated', {
+        users: this.getUserFromBoard(board),
+      });
+
+      this.logger.log(`[Board: ${payload.boardId}] User disconnected: ${user.id}`);
+    }
+  }
 
   /**
    * The handleConnection() method comes from the OnGatewayConnection lifecycle interface in NestJS.
@@ -29,7 +51,7 @@ export class AuthGateway implements OnGatewayConnection {
 
     if (!payload) {
       socket.disconnect(); // Invalid token.
-      console.error(`[Socket] Disconnected: ${socket.id} - invalid token or sessionId`);
+      this.logger.error(`[Socket] Forced Disconnection: ${socket.id} - invalid token or sessionId`);
       return;
     }
 
@@ -42,34 +64,36 @@ export class AuthGateway implements OnGatewayConnection {
     const token = socket.handshake.auth?.token;
     const payload = this.authService.validateToken(token);
 
-    // Get or create user
-    const users = this.boardService.getUsers(payload.boardId);
-    let user = users?.get(payload.sub);
+    const board = this.boardService.getBoard(payload.boardId);
+    if (board) {
+      // Get or create user
+      let user = this.boardService.getUser(payload.boardId, payload.sub);
 
-    if (!user) {
-      // New user is joining the board!
-      user = new User(payload.sub, payload.boardId, payload.role);
-      this.boardService.joinBoard(payload.boardId, user);
-      const updatedBoard = this.boardService.getBoard(payload.boardId);
+      if (!user) {
+        // New user is joining the board!
+        user = new User(payload.sub, payload.boardId, payload.role);
+        this.boardService.joinBoard(payload.boardId, user);
 
-      const usersMap = updatedBoard.getUsers();
-      const usersObject = Object.fromEntries(
-        Array.from(usersMap).map(([id, user]) => [
-          id,
-          {
-            id: user.id,
-            boardId: user.boardId,
-            role: user.role,
-          },
-        ]),
-      );
-
-      this.server.to(updatedBoard.getId()).emit('board:users:updated', {
-        users: usersObject,
-      });
+        this.logger.log(`[Board: ${payload.boardId}] User Joined: ${user.id}`);
+        this.server.to(board.getId()).emit('board:users:updated', {
+          users: this.getUserFromBoard(board),
+        });
+      }
+      socket.data.user = user;
     }
+  }
 
-    socket.data.user = user;
-    console.log(`[Board: ${payload.boardId}] User connected: ${user.id}`);
+  private getUserFromBoard(board: Board) {
+    const usersMap = board.getUsers();
+    return Object.fromEntries(
+      Array.from(usersMap).map(([id, user]) => [
+        id,
+        {
+          id: user.id,
+          boardId: user.boardId,
+          role: user.role,
+        },
+      ]),
+    );
   }
 }
