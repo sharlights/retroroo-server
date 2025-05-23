@@ -3,7 +3,6 @@ import { Server, Socket } from 'socket.io';
 import { JwtPayload } from '../auth/jtw.payload.interface';
 import { SocketErrorResponse } from './socket.core.messages';
 import { BoardService } from '../board/board.service';
-import { StageService } from '../board/stage/stage.service';
 import { HeadspaceService } from '../board/headspace/headspace.service';
 
 interface ExerciseRequest {
@@ -21,7 +20,6 @@ export class HeadspaceGateway {
 
   constructor(
     private boardService: BoardService,
-    private stageService: StageService,
     private headspaceService: HeadspaceService,
   ) {}
 
@@ -52,7 +50,7 @@ export class HeadspaceGateway {
 
       const data = this.headspaceService.startExercise(board, async (boardId) => {
         // advance stage on completion
-        this.stageService.setStage(board, 'explore');
+        this.boardService.updateStage(board.getId(), 'explore');
         this.server.to(boardId).emit('headspace:exercise:completed', { exerciseId });
         this.server.to(boardId).emit('stage-changed', { stage: 'explore' });
       });

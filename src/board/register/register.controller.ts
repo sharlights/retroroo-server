@@ -6,7 +6,6 @@ import { User } from '../board.model';
 
 @Controller()
 export class RegisterController {
-
   private readonly logger = new Logger(RegisterController.name);
 
   constructor(

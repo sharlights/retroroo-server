@@ -5,12 +5,11 @@ import { ListsService } from './lists/lists.service';
 import { RegisterController } from './register/register.controller';
 import { InviteService } from './invite/invite.service';
 import { HeadspaceService } from './headspace/headspace.service';
-import { StageService } from './stage/stage.service';
 
 @Module({
   imports: [AuthModule],
-  providers: [BoardService, ListsService, InviteService, HeadspaceService, StageService],
+  providers: [BoardService, ListsService, InviteService, HeadspaceService],
   controllers: [RegisterController],
-  exports: [BoardService, ListsService, InviteService, HeadspaceService, StageService],
+  exports: [BoardService, ListsService, InviteService, HeadspaceService],
 })
 export class BoardModule {}

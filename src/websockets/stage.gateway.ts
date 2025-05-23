@@ -1,9 +1,9 @@
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { JwtPayload } from '../auth/jtw.payload.interface';
-import { RetroStage, StageService } from '../board/stage/stage.service';
 import { SocketErrorResponse } from './socket.core.messages';
 import { BoardService } from '../board/board.service';
+import { RetroStage } from '../board/board.model';
 
 interface ChangeStageRequest {
   stage: RetroStage;
@@ -11,10 +11,7 @@ interface ChangeStageRequest {
 
 @WebSocketGateway()
 export class StageGateway {
-  constructor(
-    private boardService: BoardService,
-    private stageService: StageService,
-  ) {}
+  constructor(private boardService: BoardService) {}
 
   @SubscribeMessage('board:stage:change')
   async changeStage(@ConnectedSocket() socket: Socket, @MessageBody() changeStageRequest: ChangeStageRequest) {
@@ -25,7 +22,7 @@ export class StageGateway {
     }
 
     const board = this.boardService.getBoard(user.boardId);
-    this.stageService.setStage(board, changeStageRequest.stage);
+    this.boardService.updateStage(board.getId(), changeStageRequest.stage);
 
     socket.broadcast.emit('stage-changed', {
       stage: changeStageRequest.stage,
