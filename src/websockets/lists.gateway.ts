@@ -5,11 +5,12 @@ import { CreateListDto, UpdateListDto, DeleteListDto } from '../board/lists/dto/
 import { CreateCardDto, DeleteCardDto, UpdateCardDto, MoveCardDto } from '../board/lists/dto/card.dto';
 import { JwtPayload } from '../auth/jtw.payload.interface';
 import { User } from '../board/board.model';
+import { Logger } from '@nestjs/common';
 
 @WebSocketGateway()
 export class ListsGateway {
   @WebSocketServer() server: Server;
-
+  private readonly logger = new Logger(ListsGateway.name);
   constructor(private readonly service: ListsService) {}
 
   // List Events
@@ -63,9 +64,10 @@ export class ListsGateway {
   }
 
   @SubscribeMessage('lists:get')
-  handleGetState(@ConnectedSocket() socket: Socket, @MessageBody() boardId: string) {
-    const user: User = socket.data.user;
-    return this.service.getBoardLists(boardId, user);
+  handleGetState(@ConnectedSocket() socket: Socket) {
+    const boardId: string = socket.data.boardId;
+    this.logger.log(`[Board: ${boardId}] Get Lists`);
+    return boardId ? this.service.getBoardLists(boardId) : [];
   }
 
   @SubscribeMessage('list:card:delete')

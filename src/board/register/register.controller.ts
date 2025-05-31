@@ -3,6 +3,7 @@ import { BoardService } from '../board.service';
 import { AuthService } from '../../auth/auth.service';
 import * as crypto from 'node:crypto';
 import { User } from '../board.model';
+import { ListsService } from '../lists/lists.service';
 
 @Controller()
 export class RegisterController {
@@ -11,6 +12,7 @@ export class RegisterController {
   constructor(
     private boardService: BoardService,
     private authService: AuthService,
+    private listService: ListsService,
   ) {}
 
   /**
@@ -29,7 +31,51 @@ export class RegisterController {
     const user = new User(crypto.randomUUID(), boardId, role);
 
     if (createNewBoard) {
-      this.boardService.setDefaultTemplate(boardId, user);
+      // Create basic board
+      this.listService.createList(
+        {
+          title: 'What went well?',
+          subtitle: 'Things we are happy about.',
+          boardId: boardId,
+          order: 1,
+          colour: '#c8e6c9',
+          cards: [],
+        },
+        user,
+      );
+      this.listService.createList(
+        {
+          title: 'What went less well?',
+          subtitle: 'Things we could improve',
+          boardId: boardId,
+          order: 2,
+          colour: '#FAD4D4',
+          cards: [],
+        },
+        user,
+      );
+      this.listService.createList(
+        {
+          title: 'What do we want to try next?',
+          subtitle: 'Things we could do differently',
+          boardId: boardId,
+          order: 3,
+          colour: '#DDEBFA',
+          cards: [],
+        },
+        user,
+      );
+      this.listService.createList(
+        {
+          title: 'What puzzles us?',
+          subtitle: 'Unanswered questions we have.',
+          boardId: boardId,
+          order: 4,
+          colour: '#FBF6D4',
+          cards: [],
+        },
+        user,
+      );
     } else {
       this.logger.log(`[Board - ${boardId}]: Invite Token Used - User: ${user.id}`);
     }

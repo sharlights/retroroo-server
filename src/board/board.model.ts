@@ -52,7 +52,15 @@ export class Board {
     users?: Map<string, User>;
     stage?: RetroStage;
   }): Board {
-    const clonedLists = (lists ?? this.getLists()).map(() => new RetroList(/* clone props */));
+    const clonedLists = (lists ?? this.getLists()).map((list) => {
+      const newList = new RetroList();
+      Object.assign(newList, {
+        ...list,
+        cards: list.cards.map((card) => ({ ...card })),
+      });
+      return newList;
+    });
+
     const originalUsers = users ?? this.getUsers();
     const clonedUsers = new Map<string, User>();
     for (const [k, v] of originalUsers.entries()) {

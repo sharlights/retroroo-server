@@ -1,19 +1,21 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DeleteListDto } from './dto/list.dto';
 import { CreateCardDto, DeleteCardDto, UpdateCardDto, MoveCardDto } from './dto/card.dto';
 import { RetroList } from './model/list.model';
 import { JwtPayload } from 'src/auth/jtw.payload.interface';
 import { RetroCard } from './model/card.model';
 import { User } from '../board.model';
+import { BoardService } from '../board.service';
 
 @Injectable()
 export class ListsService {
-  private lists = new Map<string, RetroList[]>(); // boardId → lists
+  private readonly logger = new Logger(ListsService.name);
+  constructor(private readonly boardService: BoardService) {}
 
   /**
    * The new list to create.
    * @param newList The new list.
-   * @param user The user making the request.
+   * @param user The user making the request. This must be a facilitator role.
    */
   createList(newList: RetroList, user: User) {
     if (user.role !== 'facilitator' || user.boardId != newList.boardId)
@@ -22,11 +24,12 @@ export class ListsService {
     const listClone: RetroList = { ...newList };
     listClone.id = crypto.randomUUID();
 
-    // Push the list clone into the existing list.
-    const boardLists = this.lists.get(user.boardId) || [];
-    boardLists.push(listClone);
+    const board = this.boardService.getBoard(newList.boardId);
+    const lists = board.getLists();
+    lists.push(listClone);
 
-    this.lists.set(user.boardId, boardLists);
+    // Update the board
+    this.boardService.updateBoard(board.getId(), { lists: lists });
     return newList;
   }
 
@@ -34,8 +37,9 @@ export class ListsService {
     if (user.role !== 'facilitator' || user.boardId != listToUpdate.boardId)
       throw new ForbiddenException('Invalid Permissions');
 
-    const lists = this.lists.get(user.boardId);
-    if (!lists) throw new NotFoundException('Board not found');
+    const board = this.boardService.getBoard(user.boardId);
+    if (!board) throw new NotFoundException('Board not found');
+    const lists = board.getLists();
 
     const list = lists.find((l) => l.id === listToUpdate.id);
     if (!list) throw new NotFoundException('List not found');
@@ -44,6 +48,8 @@ export class ListsService {
     if (listToUpdate.subtitle) list.subtitle = listToUpdate.subtitle;
     if (listToUpdate.order !== undefined) list.order = listToUpdate.order;
     if (listToUpdate.colour) list.colour = listToUpdate.colour;
+
+    this.boardService.updateBoard(board.getId(), { lists: lists });
     return list;
   }
 
@@ -55,13 +61,10 @@ export class ListsService {
   deleteList(dto: DeleteListDto, user: User) {
     if (user.role !== 'facilitator' || user.boardId != dto.boardId) throw new ForbiddenException('Invalid Permissions');
 
-    const listsInBoard = this.lists.get(dto.boardId);
-
-    if (listsInBoard) {
-      this.lists.set(
-        dto.boardId,
-        listsInBoard.filter((l) => l.id !== dto.listId),
-      );
+    const board = this.boardService.getBoard(user.boardId);
+    if (board) {
+      const reducedList = board.getLists().filter((l) => l.id !== dto.listId);
+      this.boardService.updateBoard(board.getId(), { lists: reducedList });
     }
   }
 
@@ -71,9 +74,9 @@ export class ListsService {
    * @param user The user creating the card.
    */
   createCard(cardToCreate: CreateCardDto, user: User) {
-    const lists = this.lists.get(user.boardId) || [];
+    const board = this.boardService.getBoard(user.boardId);
+    const lists = board.getLists();
     const list = lists.find((l) => l.id === cardToCreate.listId);
-    if (!list) throw new NotFoundException('List not found');
 
     const newCard: RetroCard = {
       id: crypto.randomUUID(),
@@ -83,7 +86,7 @@ export class ListsService {
     };
 
     list.cards.push(newCard);
-
+    this.logger.log(`[Board: ${board.getId()}] Created card: ${newCard}`);
     return {
       ...newCard,
       clientId: cardToCreate.clientId,
@@ -91,7 +94,8 @@ export class ListsService {
   }
 
   deleteCard(cardToDelete: DeleteCardDto, user: JwtPayload) {
-    const lists = this.lists.get(user.boardId) || [];
+    const board = this.boardService.getBoard(user.boardId);
+    const lists = board.getLists();
     const list = lists.find((l) => l.id === cardToDelete.listId);
     if (!list) throw new NotFoundException('List not found');
 
@@ -99,7 +103,8 @@ export class ListsService {
   }
 
   updateCard(cardToUpdate: UpdateCardDto, user: JwtPayload) {
-    const lists = this.lists.get(user.boardId) || [];
+    const board = this.boardService.getBoard(user.boardId);
+    const lists = board.getLists();
     const list = lists.find((l) => l.id === cardToUpdate.listId);
     if (!list) throw new NotFoundException('List not found');
 
@@ -111,7 +116,9 @@ export class ListsService {
   }
 
   moveCard(moveDto: MoveCardDto, user: JwtPayload) {
-    const lists = this.lists.get(user.boardId) || [];
+    const board = this.boardService.getBoard(user.boardId);
+    const lists = board.getLists();
+
     const fromList = lists.find((l) => l.id === moveDto.fromListId);
     if (!fromList) throw new NotFoundException('From List not found');
     const toList = lists.find((l) => l.id === moveDto.toListId);
@@ -130,12 +137,12 @@ export class ListsService {
     return { ...card, toListId: moveDto.toListId, newIndex: insertAt };
   }
 
-  getBoardLists(boardId: string, user: User) {
-    if (user.boardId != boardId) {
-      console.error('Permission denied: %s %s', user.boardId, boardId);
-      throw new ForbiddenException('Invalid Permissions');
-    }
-
-    return this.lists.get(boardId) || [];
+  /**
+   * Fetches the lists for a given boardId. Returns an empty array if the board is not found.
+   * @param boardId The board id containing the desired lists.
+   */
+  getBoardLists(boardId: string): RetroList[] {
+    const board = this.boardService.getBoard(boardId);
+    return board?.getLists() || [];
   }
 }

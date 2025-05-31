@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Board, RetroStage, User } from './board.model';
-import { ListsService } from './lists/lists.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { RetroList } from './lists/model/list.model';
 
 /**
  * This service manages the state transition between multiple stages. A stage is a stepping stone the users
@@ -25,10 +25,7 @@ export class BoardService {
   private boards = new Map<string, Board>();
   private readonly logger = new Logger(BoardService.name);
 
-  constructor(
-    private listService: ListsService,
-    private eventEmitter: EventEmitter2,
-  ) {}
+  constructor(private eventEmitter: EventEmitter2) {}
 
   /**
    * Fetches the board from the given identifier.
@@ -66,9 +63,10 @@ export class BoardService {
    * @param boardId The board.
    * @param user The user being added to the board.
    */
-  joinBoard(boardId: string, user: User): void {
+  joinBoard(boardId: string, user: User): Board {
     const board = this.boards.get(boardId);
     board?.getUsers().set(user.id, user);
+    return board.clone();
   }
 
   getUsers(boardId: string): Map<string, User> | undefined {
@@ -77,54 +75,6 @@ export class BoardService {
 
   getUser(boardId: string, userId: string): User | undefined {
     return this.boards.get(boardId)?.getUsers().get(userId);
-  }
-
-  setDefaultTemplate(boardId: string, user: User) {
-    // Create basic board
-    this.listService.createList(
-      {
-        title: 'What went well?',
-        subtitle: 'Things we are happy about.',
-        boardId: boardId,
-        order: 1,
-        colour: '#c8e6c9',
-        cards: [],
-      },
-      user,
-    );
-    this.listService.createList(
-      {
-        title: 'What went less well?',
-        subtitle: 'Things we could improve',
-        boardId: boardId,
-        order: 2,
-        colour: '#FAD4D4',
-        cards: [],
-      },
-      user,
-    );
-    this.listService.createList(
-      {
-        title: 'What do we want to try next?',
-        subtitle: 'Things we could do differently',
-        boardId: boardId,
-        order: 3,
-        colour: '#DDEBFA',
-        cards: [],
-      },
-      user,
-    );
-    this.listService.createList(
-      {
-        title: 'What puzzles us?',
-        subtitle: 'Unanswered questions we have.',
-        boardId: boardId,
-        order: 4,
-        colour: '#FBF6D4',
-        cards: [],
-      },
-      user,
-    );
   }
 
   leaveBoard(boardId: string, user: User) {
@@ -136,5 +86,27 @@ export class BoardService {
     const board = this.getBoard(boardId);
     const updatedBoard = board.cloneWith({ stage: stage });
     this.eventEmitter.emit('stage.changed', { stage: updatedBoard.getStage() });
+  }
+
+  updateBoard(
+    boardId: string,
+    updates: Partial<{
+      id: string;
+      createdDate: string;
+      lists: RetroList[];
+      users: Map<string, User>;
+      stage: RetroStage;
+    }>,
+  ): Board {
+    const currentBoard = this.boards.get(boardId);
+    if (!currentBoard) {
+      this.logger.warn(`Cannot update. Board ${boardId} does not exist.`);
+      return undefined;
+    }
+
+    const updatedBoard = currentBoard.cloneWith(updates);
+    this.boards.set(boardId, updatedBoard);
+    this.logger.log(`[Board: ${boardId}] Updated`);
+    return updatedBoard;
   }
 }

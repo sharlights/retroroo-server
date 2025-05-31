@@ -7,5 +7,5 @@ export class RetroList {
   boardId: string;
   order: number;
   colour: string;
-  cards: RetroCard[];
+  cards: RetroCard[] = [];
 }

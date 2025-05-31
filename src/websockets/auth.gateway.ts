@@ -11,6 +11,7 @@ import { AuthService } from '../auth/auth.service';
 import { BoardService } from '../board/board.service';
 import { Board, User } from '../board/board.model';
 import { Logger } from '@nestjs/common';
+import crypto from 'node:crypto';
 
 @WebSocketGateway()
 export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -55,6 +56,8 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
+    socket.data.boardId = payload.boardId;
+
     socket.setMaxListeners(30);
     socket.join(payload.boardId);
   }
@@ -64,23 +67,24 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const token = socket.handshake.auth?.token;
     const payload = this.authService.validateToken(token);
 
-    const board = this.boardService.getBoard(payload.boardId);
-    if (board) {
+    if (this.boardService.boardExists(payload.boardId)) {
       // Get or create user
       let user = this.boardService.getUser(payload.boardId, payload.sub);
 
       if (!user) {
         // New user is joining the board!
         user = new User(payload.sub, payload.boardId, payload.role);
-        this.boardService.joinBoard(payload.boardId, user);
+        const joinBoard = this.boardService.joinBoard(payload.boardId, user);
 
-        this.logger.log(`[Board: ${payload.boardId}] User Joined: ${user.id}`);
-        this.server.to(board.getId()).emit('board:users:updated', {
-          users: this.getUserFromBoard(board),
+        this.logger.log(`[Board: ${joinBoard.getId()}] User Joined: ${user.id}`);
+        this.server.to(joinBoard.getId()).emit('board:users:updated', {
+          users: this.getUserFromBoard(joinBoard),
         });
       }
       socket.data.user = user;
+      return { success: true };
     }
+    return { success: false };
   }
 
   private getUserFromBoard(board: Board) {
