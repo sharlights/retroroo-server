@@ -88,6 +88,7 @@ export class RegisterController {
 
     return {
       boardId: user.boardId,
+      user: user,
       token,
     };
   }

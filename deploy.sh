@@ -3,8 +3,8 @@
 # Variables
 KEY="~/.ssh/cttc-aws-key-pair.pem"
 USER="ec2-user"
-HOST="ec2-54-206-214-147.ap-southeast-2.compute.amazonaws.com"
-DEST_PATH="~/retroroo-server"
+HOST="api.retroroo.com.au"
+DEST_PATH="/opt/retroroo"
 
 # Rsync options
 # -a: archive mode (recursive + preserves permissions)
@@ -16,3 +16,14 @@ rsync -av \
   --exclude 'node_modules' \
   -e "ssh -i $KEY" \
   ./ "$USER@$HOST:$DEST_PATH"
+
+
+ssh -i "$KEY" "$USER@$HOST" << EOF
+  cd $DEST_PATH
+  rm -rf dist
+  rm -rf node_modules package-lock.json
+  npm install --omit=dev
+  npx nest build
+  pm2 restart retroroo || pm2 start dist/main.js --name retroroo
+  pm2 save
+EOF
