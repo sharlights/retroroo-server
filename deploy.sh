@@ -14,15 +14,18 @@ DEST_PATH="/opt/retroroo"
 rsync -av \
   --exclude 'dist' \
   --exclude 'node_modules' \
+  --exclude '.env.dev' \
   -e "ssh -i $KEY" \
   ./ "$USER@$HOST:$DEST_PATH"
 
 ssh -i "$KEY" "$USER@$HOST" << EOF
+  set -e
   cd $DEST_PATH
   rm -rf dist
   rm -rf node_modules package-lock.json
   npm install --omit=dev
-  npx nest build
-  NODE_ENV=prod pm2 restart retroroo || NODE_ENV=prod pm2 start dist/main.js --name retroroo
+  NODE_ENV=prod node node_modules/@nestjs/cli/bin/nest.js build
+  pm2 delete retroroo || true
+  NODE_ENV=prod pm2 start dist/main.js --name retroroo
   pm2 save
 EOF

@@ -9,9 +9,8 @@ import {
 import { Server, Socket } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
 import { BoardService } from '../board/board.service';
-import { Board, User } from '../board/board.model';
+import { User } from '../board/board.model';
 import { Logger } from '@nestjs/common';
-import crypto from 'node:crypto';
 
 @WebSocketGateway()
 export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -33,9 +32,10 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const user = this.boardService.getUser(board.getId(), payload.sub);
 
       this.boardService.leaveBoard(payload.boardId, user);
+      const usersInBoard: User[] = [...board.getUsers().values()];
 
       this.server.to(board.getId()).emit('board:users:updated', {
-        users: this.getUserFromBoard(board),
+        users: usersInBoard,
       });
 
       this.logger.log(`[Board: ${payload.boardId}] User disconnected: ${user.id}`);
@@ -69,35 +69,27 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (this.boardService.boardExists(payload.boardId)) {
       // Get or create user
-      let user = this.boardService.getUser(payload.boardId, payload.sub);
+      let user: User = this.boardService.getUser(payload.boardId, payload.sub);
 
       if (!user) {
         // New user is joining the board!
-        user = new User(payload.sub, payload.boardId, payload.role);
+        user = {
+          id: payload.sub,
+          boardId: payload.boardId,
+          role: payload.role,
+        };
+
         const joinBoard = this.boardService.joinBoard(payload.boardId, user);
+        const usersInBoard: User[] = [...joinBoard.getUsers().values()];
 
         this.logger.log(`[Board: ${joinBoard.getId()}] User Joined: ${user.id}`);
         this.server.to(joinBoard.getId()).emit('board:users:updated', {
-          users: this.getUserFromBoard(joinBoard),
+          users: usersInBoard,
         });
       }
       socket.data.user = user;
       return { success: true };
     }
     return { success: false };
-  }
-
-  private getUserFromBoard(board: Board) {
-    const usersMap = board.getUsers();
-    return Object.fromEntries(
-      Array.from(usersMap).map(([id, user]) => [
-        id,
-        {
-          id: user.id,
-          boardId: user.boardId,
-          role: user.role,
-        },
-      ]),
-    );
   }
 }

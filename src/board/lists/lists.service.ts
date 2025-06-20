@@ -6,6 +6,7 @@ import { JwtPayload } from 'src/auth/jtw.payload.interface';
 import { RetroCard } from './model/card.model';
 import { User } from '../board.model';
 import { BoardService } from '../board.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class ListsService {
@@ -82,6 +83,7 @@ export class ListsService {
       id: crypto.randomUUID(),
       creatorId: user.id,
       listId: cardToCreate.listId,
+      clientId: cardToCreate.clientId,
       message: cardToCreate.message,
     };
 

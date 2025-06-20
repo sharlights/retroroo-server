@@ -63,8 +63,8 @@ export class Board {
 
     const originalUsers = users ?? this.getUsers();
     const clonedUsers = new Map<string, User>();
-    for (const [k, v] of originalUsers.entries()) {
-      clonedUsers.set(k, new User(v.id, v.boardId, v.role));
+    for (const [key, user] of originalUsers.entries()) {
+      clonedUsers.set(key, user);
     }
 
     return new Board(
@@ -79,22 +79,8 @@ export class Board {
 
 export type BoardRole = 'facilitator' | 'participant';
 
-export class User {
-  constructor(
-    private _id: string,
-    private _boardId: string,
-    private _role: BoardRole,
-  ) {}
-
-  get id(): string {
-    return this._id;
-  }
-
-  get boardId(): string {
-    return this._boardId;
-  }
-
-  get role(): BoardRole {
-    return this._role;
-  }
+export interface User {
+  id: string;
+  boardId: string;
+  role: BoardRole;
 }

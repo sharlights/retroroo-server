@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Board, RetroStage, User } from './board.model';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RetroList } from './lists/model/list.model';
+import * as crypto from 'crypto';
 
 /**
  * This service manages the state transition between multiple stages. A stage is a stepping stone the users

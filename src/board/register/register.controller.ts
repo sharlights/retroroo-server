@@ -28,7 +28,11 @@ export class RegisterController {
 
     const boardId = createNewBoard ? this.boardService.createNewBoard().getId() : inviteJwt.boardId;
     const role = createNewBoard ? 'facilitator' : 'participant';
-    const user = new User(crypto.randomUUID(), boardId, role);
+    const user: User = {
+      id: crypto.randomUUID(),
+      boardId: boardId,
+      role: role,
+    };
 
     if (createNewBoard) {
       // Create basic board
