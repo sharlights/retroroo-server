@@ -1,11 +1,16 @@
 import { WebSocketGateway, SubscribeMessage, MessageBody, WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ListsService } from '../board/lists/lists.service';
-import { CreateListDto, UpdateListDto, DeleteListDto } from '../board/lists/dto/list.dto';
-import { CreateCardDto, DeleteCardDto, UpdateCardDto, MoveCardDto } from '../board/lists/dto/card.dto';
 import { JwtPayload } from '../auth/jtw.payload.interface';
-import { User } from '../board/board.model';
+import { RetroUser } from '../board/board.model';
 import { Logger } from '@nestjs/common';
+import {
+  CreateListRequest,
+  DeleteListRequest,
+  ListDeletedEvent,
+  ListUpdatedEvent,
+  UpdateListRequest,
+} from './model.dto';
 
 @WebSocketGateway()
 export class ListsGateway {
@@ -15,52 +20,47 @@ export class ListsGateway {
 
   // List Events
   @SubscribeMessage('list:create')
-  handleCreateList(@ConnectedSocket() socket: Socket, @MessageBody() dto: CreateListDto) {
-    const user: User = socket.data.user;
+  handleCreateList(@ConnectedSocket() socket: Socket, @MessageBody() request: CreateListRequest) {
+    const user: RetroUser = socket.data.user;
     const list = this.service.createList(
       {
-        title: dto.title,
-        subtitle: dto.subtitle,
-        boardId: dto.boardId,
-        order: dto.order,
-        colour: dto.colour,
+        title: request.title,
+        subtitle: request.subtitle,
+        boardId: request.boardId,
+        order: request.order,
+        colour: request.colour,
         cards: [],
       },
       user,
     );
-    this.server.to(dto.boardId).emit('list:created', list);
+    this.server.to(request.boardId).emit('list:created', list);
   }
 
   @SubscribeMessage('list:update')
-  handleUpdateList(@ConnectedSocket() socket: Socket, @MessageBody() dto: UpdateListDto) {
+  handleUpdateList(@ConnectedSocket() socket: Socket, @MessageBody() request: UpdateListRequest) {
     const user: JwtPayload = socket.data.user;
 
-    const result = this.service.updateList(
+    const updatedList = this.service.updateList(
       {
-        id: dto.listId,
-        title: dto.title,
-        subtitle: dto.subtitle,
+        id: request.listId,
+        title: request.title,
+        subtitle: request.subtitle,
         boardId: user.boardId,
-        order: dto.order,
-        colour: dto.colour,
+        order: request.order,
+        colour: request.colour,
       },
       user,
     );
-    this.server.to(dto.boardId).emit('list:updated', result);
+    this.server.to(request.boardId).emit('list:updated', { list: updatedList } as ListUpdatedEvent);
   }
 
   @SubscribeMessage('list:delete')
-  handleDeleteList(@ConnectedSocket() socket: Socket, @MessageBody() dto: DeleteListDto) {
-    const user: User = socket.data.user;
-    this.service.deleteList(dto, user);
-    this.server.to(dto.boardId).emit('list:deleted', dto.listId);
-  }
-
-  @SubscribeMessage('list:card:create')
-  handleCreateCard(@ConnectedSocket() socket: Socket, @MessageBody() dto: CreateCardDto) {
-    const user: User = socket.data.user;
-    const card = this.service.createCard(dto, user);
-    this.server.to(user.boardId).emit('list:card:created', card);
+  handleDeleteList(@ConnectedSocket() socket: Socket, @MessageBody() request: DeleteListRequest) {
+    const user: RetroUser = socket.data.user;
+    this.service.deleteList(user.boardId, request.listId, user);
+    this.server.to(user.boardId).emit('list:deleted', {
+      listId: request.listId,
+    } as ListDeletedEvent);
   }
 
   @SubscribeMessage('lists:get')
@@ -68,26 +68,5 @@ export class ListsGateway {
     const boardId: string = socket.data.boardId;
     this.logger.log(`[Board: ${boardId}] Get Lists`);
     return boardId ? this.service.getBoardLists(boardId) : [];
-  }
-
-  @SubscribeMessage('list:card:delete')
-  handleDeleteCard(@ConnectedSocket() socket: Socket, @MessageBody() dto: DeleteCardDto) {
-    const user: JwtPayload = socket.data.user;
-    this.service.deleteCard(dto, user);
-    this.server.to(user.boardId).emit('list:card:deleted', dto.cardId);
-  }
-
-  @SubscribeMessage('list:card:update')
-  handleUpdateCard(@ConnectedSocket() socket: Socket, @MessageBody() dto: UpdateCardDto) {
-    const user: JwtPayload = socket.data.user;
-    const card = this.service.updateCard(dto, user);
-    this.server.to(user.boardId).emit('list:card:edited', card);
-  }
-
-  @SubscribeMessage('list:card:move')
-  handleMoveCard(@ConnectedSocket() socket: Socket, @MessageBody() dto: MoveCardDto) {
-    const user: JwtPayload = socket.data.user;
-    const card = this.service.moveCard(dto, user);
-    this.server.to(user.boardId).emit('list:card:moved', card);
   }
 }

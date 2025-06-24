@@ -9,8 +9,9 @@ import {
 import { Server, Socket } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
 import { BoardService } from '../board/board.service';
-import { User } from '../board/board.model';
+import { RetroUser } from '../board/board.model';
 import { Logger } from '@nestjs/common';
+import { UserService } from '../board/users/user.service';
 
 @WebSocketGateway()
 export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -20,25 +21,30 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private authService: AuthService,
     private boardService: BoardService,
+    private userService: UserService,
   ) {}
 
   handleDisconnect(socket: Socket) {
     const token = socket.handshake.auth?.token;
     const payload = this.authService.validateToken(token);
 
-    const board = this.boardService.getBoard(payload.boardId);
+    if (payload) {
+      const board = this.boardService.getBoard(payload.boardId);
 
-    if (board) {
-      const user = this.boardService.getUser(board.getId(), payload.sub);
+      if (board) {
+        const user = this.userService.getUser(board.getId(), payload.sub);
 
-      this.boardService.leaveBoard(payload.boardId, user);
-      const usersInBoard: User[] = [...board.getUsers().values()];
+        if (user) {
+          this.userService.leaveBoard(payload.boardId, user);
+          const usersInBoard = this.userService.getUsers(payload.boardId);
 
-      this.server.to(board.getId()).emit('board:users:updated', {
-        users: usersInBoard,
-      });
+          this.server.to(board.getId()).emit('board:users:updated', {
+            users: usersInBoard,
+          });
 
-      this.logger.log(`[Board: ${payload.boardId}] User disconnected: ${user.id}`);
+          this.logger.log(`[Board: ${payload.boardId}] User disconnected: ${user.id}`);
+        }
+      }
     }
   }
 
@@ -48,46 +54,48 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   async handleConnection(socket: Socket) {
     const token = socket.handshake.auth?.token;
-    const payload = this.authService.validateToken(token);
+    const jwtPayload = this.authService.validateToken(token);
 
-    if (!payload) {
+    if (!jwtPayload) {
       socket.disconnect(); // Invalid token.
       this.logger.error(`[Socket] Forced Disconnection: ${socket.id} - invalid token or sessionId`);
       return;
     }
 
-    socket.data.boardId = payload.boardId;
-
+    this.logger.log(`[Board: ${jwtPayload.boardId}] New Connection`);
     socket.setMaxListeners(30);
-    socket.join(payload.boardId);
+    socket.join(jwtPayload.boardId);
   }
 
+  /**
+   * Creates a new user and joins the board.
+   * @param socket The socket connection.
+   */
   @SubscribeMessage('board:join')
   async handleJoinBoard(@ConnectedSocket() socket: Socket) {
     const token = socket.handshake.auth?.token;
-    const payload = this.authService.validateToken(token);
+    const jwtPayload = this.authService.validateToken(token);
 
-    if (this.boardService.boardExists(payload.boardId)) {
+    this.logger.log(`[Board: ${jwtPayload.boardId}] User Attempting to Join Board`);
+    if (this.boardService.boardExists(jwtPayload.boardId)) {
       // Get or create user
-      let user: User = this.boardService.getUser(payload.boardId, payload.sub);
+      let user: RetroUser = this.userService.getUser(jwtPayload.boardId, jwtPayload.sub);
 
       if (!user) {
         // New user is joining the board!
-        user = {
-          id: payload.sub,
-          boardId: payload.boardId,
-          role: payload.role,
-        };
+        user = this.userService.createUser(jwtPayload.sub, jwtPayload.boardId, jwtPayload.role);
 
-        const joinBoard = this.boardService.joinBoard(payload.boardId, user);
-        const usersInBoard: User[] = [...joinBoard.getUsers().values()];
+        const joinBoard = this.userService.joinBoard(jwtPayload.boardId, user);
+        const usersInBoard: RetroUser[] = [...joinBoard.getUsers().values()];
 
-        this.logger.log(`[Board: ${joinBoard.getId()}] User Joined: ${user.id}`);
         this.server.to(joinBoard.getId()).emit('board:users:updated', {
           users: usersInBoard,
         });
       }
+
       socket.data.user = user;
+      socket.data.boardId = user.boardId;
+
       return { success: true };
     }
     return { success: false };

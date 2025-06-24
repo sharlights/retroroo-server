@@ -4,15 +4,7 @@ import { JwtPayload } from '../auth/jtw.payload.interface';
 import { SocketErrorResponse } from './socket.core.messages';
 import { BoardService } from '../board/board.service';
 import { HeadspaceService } from '../board/headspace/headspace.service';
-
-interface ExerciseRequest {
-  exerciseId?: string;
-}
-
-interface ActionRequest {
-  action: string;
-  payload: any;
-}
+import { ActionRequest, ExerciseRequest } from './model.dto';
 
 @WebSocketGateway()
 export class HeadspaceGateway {

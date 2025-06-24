@@ -2,8 +2,8 @@ import { Body, Controller, Logger, Post } from '@nestjs/common';
 import { BoardService } from '../board.service';
 import { AuthService } from '../../auth/auth.service';
 import * as crypto from 'node:crypto';
-import { User } from '../board.model';
 import { ListsService } from '../lists/lists.service';
+import { UserService } from '../users/user.service';
 
 @Controller()
 export class RegisterController {
@@ -13,6 +13,7 @@ export class RegisterController {
     private boardService: BoardService,
     private authService: AuthService,
     private listService: ListsService,
+    private userService: UserService,
   ) {}
 
   /**
@@ -28,11 +29,8 @@ export class RegisterController {
 
     const boardId = createNewBoard ? this.boardService.createNewBoard().getId() : inviteJwt.boardId;
     const role = createNewBoard ? 'facilitator' : 'participant';
-    const user: User = {
-      id: crypto.randomUUID(),
-      boardId: boardId,
-      role: role,
-    };
+
+    const user = this.userService.createUser(boardId, crypto.randomUUID(), role);
 
     if (createNewBoard) {
       // Create basic board

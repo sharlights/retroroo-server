@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Board, RetroStage, User } from './board.model';
+import { Board, RetroStage, RetroUser } from './board.model';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RetroList } from './lists/model/list.model';
 import * as crypto from 'crypto';
@@ -53,34 +53,16 @@ export class BoardService {
    * Creates a fresh new board.
    */
   createNewBoard(): Board {
-    const newBoard = new Board(crypto.randomUUID(), new Date().toISOString(), [], new Map<string, User>(), 'explore');
+    const newBoard = new Board(
+      crypto.randomUUID(),
+      new Date().toISOString(),
+      [],
+      new Map<string, RetroUser>(),
+      'explore',
+    );
     this.boards.set(newBoard.getId(), newBoard);
     this.logger.log(`[Board: ${newBoard.getId()}] Created`);
     return newBoard.clone();
-  }
-
-  /**
-   * Attempts to join the user to the board. The user must not already be connected.
-   * @param boardId The board.
-   * @param user The user being added to the board.
-   */
-  joinBoard(boardId: string, user: User): Board {
-    const board = this.boards.get(boardId);
-    board?.getUsers().set(user.id, user);
-    return board.clone();
-  }
-
-  getUsers(boardId: string): Map<string, User> | undefined {
-    return this.boards.get(boardId)?.getUsers();
-  }
-
-  getUser(boardId: string, userId: string): User | undefined {
-    return this.boards.get(boardId)?.getUsers().get(userId);
-  }
-
-  leaveBoard(boardId: string, user: User) {
-    const board = this.boards.get(boardId);
-    board.getUsers().delete(user.id);
   }
 
   updateStage(boardId: string, stage: RetroStage) {
@@ -95,7 +77,7 @@ export class BoardService {
       id: string;
       createdDate: string;
       lists: RetroList[];
-      users: Map<string, User>;
+      users: Map<string, RetroUser>;
       stage: RetroStage;
     }>,
   ): Board {

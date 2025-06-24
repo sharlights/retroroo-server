@@ -7,7 +7,7 @@ export class Board {
     private readonly id: string,
     private readonly createdDate: string,
     private readonly lists: RetroList[] = [],
-    private readonly users: Map<string, User> = new Map(),
+    private readonly users: Map<string, RetroUser> = new Map(),
     private readonly stage: RetroStage,
   ) {}
 
@@ -27,11 +27,11 @@ export class Board {
     return this.lists;
   }
 
-  getUsers(): Map<string, User> {
+  getUsers(): Map<string, RetroUser> {
     return this.users;
   }
 
-  addUser(userId: string, user: User): void {
+  addUser(userId: string, user: RetroUser): void {
     this.users.set(userId, user);
   }
 
@@ -49,7 +49,7 @@ export class Board {
     id?: string;
     createdDate?: string;
     lists?: RetroList[];
-    users?: Map<string, User>;
+    users?: Map<string, RetroUser>;
     stage?: RetroStage;
   }): Board {
     const clonedLists = (lists ?? this.getLists()).map((list) => {
@@ -62,7 +62,7 @@ export class Board {
     });
 
     const originalUsers = users ?? this.getUsers();
-    const clonedUsers = new Map<string, User>();
+    const clonedUsers = new Map<string, RetroUser>();
     for (const [key, user] of originalUsers.entries()) {
       clonedUsers.set(key, user);
     }
@@ -79,7 +79,7 @@ export class Board {
 
 export type BoardRole = 'facilitator' | 'participant';
 
-export interface User {
+export interface RetroUser {
   id: string;
   boardId: string;
   role: BoardRole;

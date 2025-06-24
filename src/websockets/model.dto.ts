@@ -1,0 +1,109 @@
+import { RetroCard } from '../board/lists/model/card.model';
+import { RetroList } from '../board/lists/model/list.model';
+
+/**
+ *
+ * Card
+ *
+ */
+export interface VoteForCardRequest {
+  cardId: string;
+}
+
+export interface UnvoteForCardRequest {
+  cardId: string;
+}
+
+export interface CreateCardRequest {
+  clientId: string;
+  listId: string;
+  message: string;
+}
+
+export interface CardCreatedEvent {
+  card: RetroCard;
+}
+
+export interface DeleteCardRequest {
+  listId: string;
+  cardId: string;
+}
+
+export interface CardDeletedEvent {
+  cardId: string;
+}
+
+export interface UpdateCardRequest {
+  listId: string;
+  cardId: string;
+  message: string;
+}
+
+export interface CardUpdatedEvent {
+  card: RetroCard;
+}
+
+export interface MoveCardRequest {
+  fromListId: string;
+  toListId: string;
+  cardId: string;
+  targetIndex: number;
+}
+
+export interface CardMovedEvent {
+  cardId: string;
+  fromListId: string;
+  toListId: string;
+  newListIndex: number;
+}
+
+/**
+ *
+ * Lists
+ *
+ */
+export interface ListUpdatedEvent {
+  list: RetroList;
+}
+
+export interface DeleteListRequest {
+  listId: string;
+}
+
+export interface ListDeletedEvent {
+  listId: string;
+}
+
+export interface CreateListRequest {
+  boardId: string;
+  name: string;
+  title: string;
+  subtitle: string;
+  order: number;
+  colour: string;
+}
+
+export interface UpdateListRequest {
+  boardId: string;
+  listId: string;
+  title: string;
+  subtitle: string;
+  order: number;
+  colour: string;
+}
+
+/**
+ *
+ * Headspace
+ *
+ */
+
+// Exercise
+export interface ExerciseRequest {
+  exerciseId?: string;
+}
+
+export interface ActionRequest {
+  action: string;
+  payload: any;
+}
