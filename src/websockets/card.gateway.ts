@@ -19,9 +19,9 @@ import {
 import { UserService } from '../board/users/user.service';
 
 @WebSocketGateway()
-export class ListsGateway {
+export class CardGateway {
   @WebSocketServer() server: Server;
-  private readonly logger = new Logger(ListsGateway.name);
+  private readonly logger = new Logger(CardGateway.name);
   constructor(
     private readonly service: ListsService,
     private readonly userService: UserService,

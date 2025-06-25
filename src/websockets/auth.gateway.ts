@@ -48,56 +48,44 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  /**
-   * The handleConnection() method comes from the OnGatewayConnection lifecycle interface in NestJS.
-   * It’s automatically called by NestJS when a client first connects to the gateway.
-   */
   async handleConnection(socket: Socket) {
     const token = socket.handshake.auth?.token;
     const jwtPayload = this.authService.validateToken(token);
 
     if (!jwtPayload) {
-      socket.disconnect(); // Invalid token.
-      this.logger.error(`[Socket] Forced Disconnection: ${socket.id} - invalid token or sessionId`);
+      socket.disconnect();
+      this.logger.error(`[Socket] Forced Disconnection: ${socket.id} - invalid token`);
       return;
     }
 
-    this.logger.log(`[Board: ${jwtPayload.boardId}] New Connection`);
-    socket.setMaxListeners(30);
-    socket.join(jwtPayload.boardId);
-  }
-
-  /**
-   * Creates a new user and joins the board.
-   * @param socket The socket connection.
-   */
-  @SubscribeMessage('board:join')
-  async handleJoinBoard(@ConnectedSocket() socket: Socket) {
-    const token = socket.handshake.auth?.token;
-    const jwtPayload = this.authService.validateToken(token);
-
-    this.logger.log(`[Board: ${jwtPayload.boardId}] User Attempting to Join Board`);
-    if (this.boardService.boardExists(jwtPayload.boardId)) {
-      // Get or create user
-      let user: RetroUser = this.userService.getUser(jwtPayload.boardId, jwtPayload.sub);
-
-      if (!user) {
-        // New user is joining the board!
-        user = this.userService.createUser(jwtPayload.sub, jwtPayload.boardId, jwtPayload.role);
-
-        const joinBoard = this.userService.joinBoard(jwtPayload.boardId, user);
-        const usersInBoard: RetroUser[] = [...joinBoard.getUsers().values()];
-
-        this.server.to(joinBoard.getId()).emit('board:users:updated', {
-          users: usersInBoard,
-        });
-      }
-
-      socket.data.user = user;
-      socket.data.boardId = user.boardId;
-
-      return { success: true };
+    const boardId = jwtPayload.boardId;
+    const board = this.boardService.getBoard(boardId);
+    if (!board) {
+      socket.disconnect();
+      this.logger.error(`[Socket] Board does not exist: ${jwtPayload.boardId} `);
+      return;
     }
-    return { success: false };
+
+    socket.setMaxListeners(30);
+    socket.join(boardId);
+
+    // Create or get user
+    let user: RetroUser = this.userService.getUser(boardId, jwtPayload.sub);
+
+    if (!user) {
+      user = this.userService.createUser(boardId, jwtPayload.sub, jwtPayload.role);
+      const board = this.userService.joinBoard(boardId, user);
+
+      const usersInBoard = [...board.getUsers().values()];
+      this.server.to(boardId).emit('board:users:updated', {
+        users: usersInBoard,
+      });
+    }
+
+    socket.data.user = user;
+    socket.data.boardId = user.boardId;
+    console.log('socket board id: ', user.boardId);
+
+    socket.emit('board:joined', { success: true });
   }
 }
