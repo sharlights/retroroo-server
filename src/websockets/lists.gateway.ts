@@ -1,7 +1,6 @@
 import { WebSocketGateway, SubscribeMessage, MessageBody, WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ListsService } from '../board/lists/lists.service';
-import { JwtPayload } from '../auth/jtw.payload.interface';
 import { RetroUser } from '../board/board.model';
 import { Logger } from '@nestjs/common';
 import {
@@ -38,7 +37,7 @@ export class ListsGateway {
 
   @SubscribeMessage('list:update')
   handleUpdateList(@ConnectedSocket() socket: Socket, @MessageBody() request: UpdateListRequest) {
-    const user: JwtPayload = socket.data.user;
+    const user: RetroUser = socket.data.user;
 
     const updatedList = this.service.updateList(
       {

@@ -1,6 +1,5 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { RetroList } from './model/list.model';
-import { JwtPayload } from 'src/auth/jtw.payload.interface';
 import { RetroCard } from './model/card.model';
 import { RetroUser } from '../board.model';
 import { BoardService } from '../board.service';
@@ -38,7 +37,7 @@ export class ListsService {
     return newList;
   }
 
-  updateList(listToUpdate: Partial<RetroList>, user: JwtPayload): RetroList {
+  updateList(listToUpdate: Partial<RetroList>, user: RetroUser): RetroList {
     if (user.role !== 'facilitator' || user.boardId != listToUpdate.boardId)
       throw new ForbiddenException('Invalid Permissions');
 
@@ -102,7 +101,7 @@ export class ListsService {
     };
   }
 
-  deleteCard(cardToDelete: DeleteCardRequest, user: JwtPayload) {
+  deleteCard(cardToDelete: DeleteCardRequest, user: RetroUser) {
     const board = this.boardService.getBoard(user.boardId);
     const lists = board.getLists();
     const list = lists.find((l) => l.id === cardToDelete.listId);
@@ -111,7 +110,7 @@ export class ListsService {
     list.cards = list.cards.filter((c) => c.id !== cardToDelete.cardId);
   }
 
-  updateCard(cardId: string, cardUpdate: Partial<RetroCard>, user: JwtPayload): RetroCard {
+  updateCard(cardId: string, cardUpdate: Partial<RetroCard>, user: RetroUser): RetroCard {
     const board = this.boardService.getBoard(user.boardId);
     const cardToUpdate = this.getCard(cardId, board.getId());
 
@@ -142,7 +141,7 @@ export class ListsService {
     return undefined;
   }
 
-  async downvoteCard(cardId: string, user: RetroUser) {
+  async downvoteCard(cardId: string, user: RetroUser): Promise<RetroCard> {
     const board = this.boardService.getBoard(user.boardId);
 
     const cardLock = this.cardLocks.get(cardId);
@@ -157,7 +156,9 @@ export class ListsService {
       if (currentVotes > 0) {
         cardToUpdate.votes.set(user.id, currentVotes - 1);
       }
+      return cardToUpdate;
     });
+    return undefined;
   }
 
   getCard(cardId: string, boardId: string): RetroCard | undefined {
@@ -172,7 +173,7 @@ export class ListsService {
     return undefined;
   }
 
-  moveCard(moveDto: MoveCardRequest, user: JwtPayload) {
+  moveCard(moveDto: MoveCardRequest, user: RetroUser) {
     const board = this.boardService.getBoard(user.boardId);
     const lists = board.getLists();
 

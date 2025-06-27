@@ -5,6 +5,7 @@ import { SocketErrorResponse } from './socket.core.messages';
 import { BoardService } from '../board/board.service';
 import { HeadspaceService } from '../board/headspace/headspace.service';
 import { ActionRequest, ExerciseRequest } from './model.dto';
+import { RetroUser } from '../board/board.model';
 
 @WebSocketGateway()
 export class HeadspaceGateway {
@@ -83,19 +84,19 @@ export class HeadspaceGateway {
   /** participants call this for any game-specific event */
   @SubscribeMessage('board:headspace:exercise:action')
   async onAction(@ConnectedSocket() socket: Socket, @MessageBody() { action, payload }: ActionRequest) {
-    const user = socket.data.user as JwtPayload;
+    const user: RetroUser = socket.data.user;
     const board = this.boardService.getBoard(user.boardId);
     let exercise;
 
     try {
       exercise = this.headspaceService.getActiveExercise(board.getId());
-      exercise.handleAction(user.sub, action, payload);
+      exercise.handleAction(user.id, action, payload);
 
       // broadcast to everyone what just happened
       this.server.to(board.getId()).emit('headspace:exercise:action', {
         exerciseId: exercise.exerciseId,
         action,
-        userId: user.sub,
+        userId: user.id,
         payload,
       });
     } catch (err: any) {

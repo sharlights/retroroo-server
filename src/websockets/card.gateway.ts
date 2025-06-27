@@ -1,7 +1,6 @@
 import { WebSocketGateway, SubscribeMessage, MessageBody, WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ListsService } from '../board/lists/lists.service';
-import { JwtPayload } from '../auth/jtw.payload.interface';
 import { RetroUser } from '../board/board.model';
 import { Logger } from '@nestjs/common';
 import {
@@ -16,16 +15,12 @@ import {
   UpdateCardRequest,
   VoteForCardRequest,
 } from './model.dto';
-import { UserService } from '../board/users/user.service';
 
 @WebSocketGateway()
 export class CardGateway {
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(CardGateway.name);
-  constructor(
-    private readonly service: ListsService,
-    private readonly userService: UserService,
-  ) {}
+  constructor(private readonly service: ListsService) {}
 
   @SubscribeMessage('list:card:create')
   handleCreateCard(@ConnectedSocket() socket: Socket, @MessageBody() request: CreateCardRequest) {
@@ -36,7 +31,7 @@ export class CardGateway {
 
   @SubscribeMessage('list:card:delete')
   handleDeleteCard(@ConnectedSocket() socket: Socket, @MessageBody() request: DeleteCardRequest) {
-    const user: JwtPayload = socket.data.user;
+    const user: RetroUser = socket.data.user;
     this.service.deleteCard(request, user);
     this.server.to(user.boardId).emit('list:card:deleted', {
       cardId: request.cardId,
@@ -45,7 +40,7 @@ export class CardGateway {
 
   @SubscribeMessage('list:card:update')
   handleUpdateCard(@ConnectedSocket() socket: Socket, @MessageBody() request: UpdateCardRequest) {
-    const user: JwtPayload = socket.data.user;
+    const user: RetroUser = socket.data.user;
     const card = this.service.updateCard(request.cardId, { message: request.message }, user);
     this.server.to(user.boardId).emit('list:card:updated', {
       card: card,
@@ -54,7 +49,7 @@ export class CardGateway {
 
   @SubscribeMessage('list:card:move')
   handleMoveCard(@ConnectedSocket() socket: Socket, @MessageBody() request: MoveCardRequest) {
-    const user: JwtPayload = socket.data.user;
+    const user: RetroUser = socket.data.user;
     const card = this.service.moveCard(request, user);
     this.server.to(user.boardId).emit('list:card:moved', {
       cardId: card.id,
@@ -66,10 +61,10 @@ export class CardGateway {
 
   @SubscribeMessage('list:card:vote')
   async handleVoteFor(@ConnectedSocket() socket: Socket, @MessageBody() request: VoteForCardRequest) {
-    const jwt: JwtPayload = socket.data.user;
-    const user: RetroUser = this.userService.getUser(jwt.boardId, jwt.sub);
+    const user: RetroUser = socket.data.user;
     const card = await this.service.upvoteCard(request.cardId, user);
 
+    this.logger.log(`[Board: ${user.boardId}] User ${user.id} voted for card: ${card.id}`);
     this.server.to(user.boardId).emit('list:card:updated', {
       card: card,
     });
@@ -77,12 +72,14 @@ export class CardGateway {
 
   @SubscribeMessage('list:card:unvote')
   async handleUnvoteFor(@ConnectedSocket() socket: Socket, @MessageBody() request: UnvoteForCardRequest) {
-    const jwt: JwtPayload = socket.data.user;
-    const user: RetroUser = this.userService.getUser(jwt.boardId, jwt.sub);
+    const user: RetroUser = socket.data.user;
     const card = await this.service.downvoteCard(request.cardId, user);
 
-    this.server.to(user.boardId).emit('list:card:updated', {
-      card: card,
-    });
+    if (card) {
+      this.logger.log(`[Board: ${user.boardId}] User ${user.id} down-voted card: ${card.id}`);
+      this.server.to(user.boardId).emit('list:card:updated', {
+        card: card,
+      });
+    }
   }
 }

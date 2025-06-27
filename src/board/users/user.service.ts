@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BoardService } from '../board.service';
 import { Board, BoardRole, RetroUser } from '../board.model';
+import { NotFoundError } from 'rxjs';
 
 @Injectable()
 export class UserService {
@@ -20,6 +21,9 @@ export class UserService {
   }
 
   getUser(boardId: string, userId: string): RetroUser | undefined {
+    if (!userId) {
+      throw new NotFoundError(`User with id ${boardId} not found.`);
+    }
     return this.boardService.getBoard(boardId)?.getUsers().get(userId);
   }
 
@@ -32,6 +36,7 @@ export class UserService {
     const board = this.boardService.getBoard(boardId);
     board?.getUsers().set(user.id, user);
     this.logger.log(`[Board: ${board.getId()}] User Joined: ${user.id}`);
+    this.boardService.updateBoard(boardId, { users: board.getUsers() });
     return board.clone();
   }
 
