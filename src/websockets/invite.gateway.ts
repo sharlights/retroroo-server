@@ -2,7 +2,7 @@ import { ConnectedSocket, SubscribeMessage, WebSocketGateway, WsException } from
 import { InviteService } from '../board/invite/invite.service';
 import { Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
-import { RetroUser } from '../board/board.model';
+import { RetroUser } from '../board/users/retro-user.dto';
 
 @WebSocketGateway()
 export class InviteGateway {

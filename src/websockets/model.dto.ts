@@ -1,5 +1,6 @@
-import { RetroCard } from '../board/lists/model/card.model';
-import { RetroList } from '../board/lists/model/list.model';
+import { RetroCard } from '../board/card/retro-card.dto';
+import { RetroList } from '../board/lists/retro-list.dto';
+import { RetroUser } from '../board/users/retro-user.dto';
 
 /**
  *
@@ -106,4 +107,13 @@ export interface ExerciseRequest {
 export interface ActionRequest {
   action: string;
   payload: any;
+}
+
+/**
+ *
+ * Users
+ *
+ */
+export interface UserUpdatedPayload {
+  users: RetroUser[];
 }

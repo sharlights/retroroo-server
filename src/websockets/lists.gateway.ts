@@ -1,7 +1,6 @@
-import { WebSocketGateway, SubscribeMessage, MessageBody, WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ListsService } from '../board/lists/lists.service';
-import { RetroUser } from '../board/board.model';
 import { Logger } from '@nestjs/common';
 import {
   CreateListRequest,
@@ -10,6 +9,7 @@ import {
   ListUpdatedEvent,
   UpdateListRequest,
 } from './model.dto';
+import { RetroUser } from '../board/users/retro-user.dto';
 
 @WebSocketGateway()
 export class ListsGateway {
@@ -19,7 +19,7 @@ export class ListsGateway {
 
   // List Events
   @SubscribeMessage('list:create')
-  handleCreateList(@ConnectedSocket() socket: Socket, @MessageBody() request: CreateListRequest) {
+  async handleCreateList(@ConnectedSocket() socket: Socket, @MessageBody() request: CreateListRequest) {
     const user: RetroUser = socket.data.user;
     const list = this.service.createList(
       {
@@ -36,10 +36,10 @@ export class ListsGateway {
   }
 
   @SubscribeMessage('list:update')
-  handleUpdateList(@ConnectedSocket() socket: Socket, @MessageBody() request: UpdateListRequest) {
+  async handleUpdateList(@ConnectedSocket() socket: Socket, @MessageBody() request: UpdateListRequest) {
     const user: RetroUser = socket.data.user;
 
-    const updatedList = this.service.updateList(
+    const updatedList = await this.service.updateList(
       {
         id: request.listId,
         title: request.title,
@@ -54,18 +54,18 @@ export class ListsGateway {
   }
 
   @SubscribeMessage('list:delete')
-  handleDeleteList(@ConnectedSocket() socket: Socket, @MessageBody() request: DeleteListRequest) {
+  async handleDeleteList(@ConnectedSocket() socket: Socket, @MessageBody() request: DeleteListRequest) {
     const user: RetroUser = socket.data.user;
-    this.service.deleteList(user.boardId, request.listId, user);
+    await this.service.deleteList(user.boardId, request.listId, user);
     this.server.to(user.boardId).emit('list:deleted', {
       listId: request.listId,
     } as ListDeletedEvent);
   }
 
   @SubscribeMessage('lists:get')
-  handleGetState(@ConnectedSocket() socket: Socket) {
+  async handleGetState(@ConnectedSocket() socket: Socket) {
     const boardId: string = socket.data.boardId;
     this.logger.log(`[Board: ${boardId}] Get Lists`);
-    return boardId ? this.service.getBoardLists(boardId) : [];
+    return await this.service.getBoardLists(boardId);
   }
 }

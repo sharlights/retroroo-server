@@ -1,47 +1,100 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BoardService } from '../board.service';
-import { Board, BoardRole, RetroUser } from '../board.model';
 import { NotFoundError } from 'rxjs';
+import { BoardRole } from '../../types/roles';
+import { RetroUser } from './retro-user.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { RetroUserEntity } from './retro-user.entity';
+import { MoreThan, Repository } from 'typeorm';
 
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
-  constructor(private readonly boardService: BoardService) {}
 
-  public createUser(boardId: string, userId: string, role: BoardRole): RetroUser {
-    return {
-      id: userId,
-      boardId: boardId,
-      role: role,
-    } as RetroUser;
+  constructor(
+    private readonly boardService: BoardService,
+    @InjectRepository(RetroUserEntity)
+    private readonly userRepo: Repository<RetroUserEntity>,
+  ) {}
+
+  async createUser(boardId: string, userId: string, role: BoardRole): Promise<RetroUser> {
+    const entity = this.userRepo.create({ id: userId, board: { id: boardId }, role });
+    const saved = await this.userRepo.save(entity);
+    return this.toDto(saved);
   }
 
-  getUsers(boardId: string): Map<string, RetroUser> | undefined {
-    return this.boardService.getBoard(boardId)?.getUsers();
+  async getUsers(boardId: string): Promise<RetroUser[]> {
+    const userEntities = await this.userRepo.find({ where: { board: { id: boardId } } });
+    return this.toDtos(userEntities);
   }
 
-  getUser(boardId: string, userId: string): RetroUser | undefined {
+  async getActiveUsers(boardId: string): Promise<RetroUser[]> {
+    const userEntities = await this.userRepo.find({
+      where: {
+        board: { id: boardId },
+        sessionCount: MoreThan(0),
+      },
+    });
+    return this.toDtos(userEntities);
+  }
+
+  async getUser(userId: string): Promise<RetroUser | undefined> {
     if (!userId) {
-      throw new NotFoundError(`User with id ${boardId} not found.`);
+      throw new NotFoundError(`User with user id ${userId} not found.`);
     }
-    return this.boardService.getBoard(boardId)?.getUsers().get(userId);
+
+    const userEntity = await this.userRepo.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!userEntity) {
+      this.logger.warn(`User with user id ${userId} not found.`);
+      return undefined;
+    }
+
+    return this.toDto(userEntity);
   }
 
-  /**
-   * Attempts to join the user to the board. The user must not already be connected.
-   * @param boardId The board.
-   * @param user The user being added to the board.
-   */
-  joinBoard(boardId: string, user: RetroUser): Board {
-    const board = this.boardService.getBoard(boardId);
-    board?.getUsers().set(user.id, user);
-    this.logger.log(`[Board: ${board.getId()}] User Joined: ${user.id}`);
-    this.boardService.updateBoard(boardId, { users: board.getUsers() });
-    return board.clone();
+  private toDtos(entities: RetroUserEntity[]): RetroUser[] {
+    return entities.map((user) => this.toDto(user));
   }
 
-  leaveBoard(boardId: string, user: RetroUser) {
-    const board = this.boardService.getBoard(boardId);
-    board.getUsers().delete(user.id);
+  private toDto(entity: RetroUserEntity): RetroUser {
+    return {
+      id: entity.id,
+      boardId: entity.board.id,
+      sessionCount: entity.sessionCount,
+      role: entity.role,
+    };
+  }
+
+  async userDisconnected(userId: string): Promise<void> {
+    const userEntity = await this.userRepo.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!userEntity) return;
+
+    userEntity.sessionCount = Math.max(0, (userEntity.sessionCount || 0) - 1);
+
+    await this.userRepo.save(userEntity);
+  }
+
+  async userConnected(userId: string): Promise<void> {
+    const userEntity = await this.userRepo.findOne({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!userEntity) return;
+
+    userEntity.sessionCount = Math.max(0, (userEntity.sessionCount || 0) + 1);
+
+    await this.userRepo.save(userEntity);
   }
 }

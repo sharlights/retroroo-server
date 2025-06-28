@@ -1,15 +1,15 @@
-import { Board } from '../../board.model';
 import { ExerciseStatus, HeadspaceExercise } from './exercise.model';
+import { RetroBoard } from '../../retro-board.dto';
 
 export class OneWordExercise implements HeadspaceExercise {
   readonly exerciseId = 'one-word';
-  readonly board: Board;
+  readonly board: RetroBoard;
   status: ExerciseStatus = 'SELECTED';
 
   private responses = new Map<string, string>();
   private onComplete!: () => void;
 
-  constructor(board: Board) {
+  constructor(board: RetroBoard) {
     this.board = board;
   }
 
@@ -41,10 +41,6 @@ export class OneWordExercise implements HeadspaceExercise {
         }
         this.responses.set(userId, payload.word);
         // all participants submitted?
-        if (this.responses.size === this.board.getUsers().size) {
-          this.status = 'COMPLETED';
-          this.onComplete();
-        }
         break;
 
       default:

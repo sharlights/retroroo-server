@@ -1,17 +1,11 @@
-import {
-  ConnectedSocket,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-  SubscribeMessage,
-  WebSocketGateway,
-  WebSocketServer,
-} from '@nestjs/websockets';
+import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
 import { BoardService } from '../board/board.service';
-import { RetroUser } from '../board/board.model';
 import { Logger } from '@nestjs/common';
 import { UserService } from '../board/users/user.service';
+import { RetroUser } from '../board/users/retro-user.dto';
+import { UserUpdatedPayload } from './model.dto';
 
 @WebSocketGateway()
 export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -24,26 +18,23 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private userService: UserService,
   ) {}
 
-  handleDisconnect(socket: Socket) {
+  async handleDisconnect(socket: Socket) {
     const token = socket.handshake.auth?.token;
     const payload = this.authService.validateToken(token);
 
     if (payload) {
-      const board = this.boardService.getBoard(payload.boardId);
+      const boardId = payload.boardId;
+      const userId = payload.sub;
 
-      if (board) {
-        const user = this.userService.getUser(board.getId(), payload.sub);
+      if (boardId && userId) {
+        await this.userService.userDisconnected(userId);
+        const usersInBoard = await this.userService.getActiveUsers(payload.boardId);
 
-        if (user) {
-          this.userService.leaveBoard(payload.boardId, user);
-          const usersInBoard = this.userService.getUsers(payload.boardId);
+        this.server.to(boardId).emit('board:users:updated', {
+          users: usersInBoard,
+        } as UserUpdatedPayload);
 
-          this.server.to(board.getId()).emit('board:users:updated', {
-            users: usersInBoard,
-          });
-
-          this.logger.log(`[Board: ${payload.boardId}] User disconnected: ${user.id}`);
-        }
+        this.logger.log(`[Board: ${payload.boardId}] User disconnected: ${userId}`);
       }
     }
   }
@@ -66,25 +57,26 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
+    socket.data.boardId = jwtPayload.boardId;
+
     socket.setMaxListeners(30);
     socket.join(boardId);
 
     // Create or get user
-    let user: RetroUser = this.userService.getUser(boardId, jwtPayload.sub);
+    let user: RetroUser = await this.userService.getUser(jwtPayload.sub);
 
     if (!user) {
-      user = this.userService.createUser(boardId, jwtPayload.sub, jwtPayload.role);
-      const board = this.userService.joinBoard(boardId, user);
+      user = await this.userService.createUser(boardId, jwtPayload.sub, jwtPayload.role);
 
-      const usersInBoard = [...board.getUsers().values()];
+      const usersInBoard = await this.userService.getUsers(boardId);
       this.server.to(boardId).emit('board:users:updated', {
         users: usersInBoard,
-      });
+      } as UserUpdatedPayload);
+    } else {
+      await this.userService.userConnected(user.id);
     }
 
     socket.data.user = user;
-    socket.data.boardId = user.boardId;
-    console.log('socket board id: ', user.boardId);
 
     socket.emit('board:joined', { success: true });
   }

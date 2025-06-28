@@ -1,8 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Board, RetroStage, RetroUser } from './board.model';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { RetroList } from './lists/model/list.model';
 import * as crypto from 'crypto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { RetroStage } from '../types/stages';
+import { RetroBoard } from './retro-board.dto';
+import { RetroBoardEntity } from './retro-board.entity';
 
 /**
  * This service manages the state transition between multiple stages. A stage is a stepping stone the users
@@ -23,73 +26,58 @@ import * as crypto from 'crypto';
  */
 @Injectable()
 export class BoardService {
-  private boards = new Map<string, Board>();
   private readonly logger = new Logger(BoardService.name);
 
-  constructor(private eventEmitter: EventEmitter2) {}
+  constructor(
+    private eventEmitter: EventEmitter2,
+    @InjectRepository(RetroBoardEntity)
+    private readonly boardRepo: Repository<RetroBoardEntity>,
+  ) {}
 
-  /**
-   * Fetches the board from the given identifier.
-   * @param boardId The identifier.
-   */
-  getBoard(boardId: string): Board {
-    if (this.boardExists(boardId)) {
-      return this.boards.get(boardId).clone();
-    } else {
-      this.logger.warn(`Unable to find board ${boardId}`);
+  async getBoard(boardId: string): Promise<RetroBoard> {
+    const entity = await this.boardRepo.findOne({ where: { id: boardId } });
+    if (!entity) {
+      this.logger.warn(`Board ${boardId} not found`);
+      throw new NotFoundException(`Board ${boardId} not found`);
     }
-    return undefined;
+    return this.toDto(entity);
   }
 
-  /**
-   * Checks if the given board id already exists.
-   * @param boardId
-   */
-  boardExists(boardId: string): boolean {
-    return boardId && this.boards.has(boardId);
+  async boardExists(boardId: string): Promise<boolean> {
+    return !!(await this.boardRepo.findOne({ where: { id: boardId } }));
   }
 
-  /**
-   * Creates a fresh new board.
-   */
-  createNewBoard(): Board {
-    const newBoard = new Board(
-      crypto.randomUUID(),
-      new Date().toISOString(),
-      [],
-      new Map<string, RetroUser>(),
-      'explore',
-    );
-    this.boards.set(newBoard.getId(), newBoard);
-    this.logger.log(`[Board: ${newBoard.getId()}] Created`);
-    return newBoard.clone();
+  async createNewBoard(): Promise<RetroBoard> {
+    const board = this.boardRepo.create({
+      id: crypto.randomUUID(),
+      stage: 'explore',
+    });
+    const saved = await this.boardRepo.save(board);
+    this.logger.log(`[Board: ${saved.id}] Created`);
+    return this.toDto(saved);
   }
 
-  updateStage(boardId: string, stage: RetroStage) {
-    const board = this.getBoard(boardId);
-    const updatedBoard = board.cloneWith({ stage: stage });
-    this.eventEmitter.emit('stage.changed', { stage: updatedBoard.getStage() });
+  async updateStage(boardId: string, stage: RetroStage): Promise<RetroBoard> {
+    const board = await this.boardRepo.findOneOrFail({ where: { id: boardId } });
+    board.stage = stage;
+    const updated = await this.boardRepo.save(board);
+    this.eventEmitter.emit('stage.changed', { stage: updated.stage });
+    return this.toDto(updated);
   }
 
-  updateBoard(
-    boardId: string,
-    updates: Partial<{
-      id: string;
-      createdDate: string;
-      lists: RetroList[];
-      users: Map<string, RetroUser>;
-      stage: RetroStage;
-    }>,
-  ): Board {
-    const currentBoard = this.boards.get(boardId);
-    if (!currentBoard) {
-      this.logger.warn(`Cannot update. Board ${boardId} does not exist.`);
-      return undefined;
-    }
-
-    const updatedBoard = currentBoard.cloneWith(updates);
-    this.boards.set(boardId, updatedBoard);
+  async updateBoard(boardId: string, updates: Partial<RetroBoard>): Promise<RetroBoard> {
+    const board = await this.boardRepo.findOneOrFail({ where: { id: boardId } });
+    const merged = this.boardRepo.merge(board, updates);
+    const saved = await this.boardRepo.save(merged);
     this.logger.log(`[Board: ${boardId}] Updated`);
-    return updatedBoard;
+    return this.toDto(saved);
+  }
+
+  private toDto(entity: RetroBoardEntity): RetroBoard {
+    return {
+      id: entity.id,
+      createdDate: entity.createdDate,
+      stage: entity.stage,
+    };
   }
 }

@@ -3,7 +3,7 @@ import { Socket } from 'socket.io';
 import { JwtPayload } from '../auth/jtw.payload.interface';
 import { SocketErrorResponse } from './socket.core.messages';
 import { BoardService } from '../board/board.service';
-import { RetroStage } from '../board/board.model';
+import { RetroStage } from '../types/stages';
 
 interface ChangeStageRequest {
   stage: RetroStage;
@@ -21,8 +21,8 @@ export class StageGateway {
       return new SocketErrorResponse('FORBIDDEN', 'Only facilitators can change the stage.');
     }
 
-    const board = this.boardService.getBoard(user.boardId);
-    this.boardService.updateStage(board.getId(), changeStageRequest.stage);
+    const board = await this.boardService.getBoard(user.boardId);
+    await this.boardService.updateStage(board.id, changeStageRequest.stage);
 
     socket.broadcast.emit('stage-changed', {
       stage: changeStageRequest.stage,

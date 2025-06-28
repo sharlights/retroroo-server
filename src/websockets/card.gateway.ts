@@ -1,7 +1,5 @@
-import { WebSocketGateway, SubscribeMessage, MessageBody, WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ListsService } from '../board/lists/lists.service';
-import { RetroUser } from '../board/board.model';
 import { Logger } from '@nestjs/common';
 import {
   CardCreatedEvent,
@@ -15,42 +13,44 @@ import {
   UpdateCardRequest,
   VoteForCardRequest,
 } from './model.dto';
+import { RetroUser } from '../board/users/retro-user.dto';
+import { CardsService } from '../board/card/cards.service';
 
 @WebSocketGateway()
 export class CardGateway {
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(CardGateway.name);
-  constructor(private readonly service: ListsService) {}
+  constructor(private readonly service: CardsService) {}
 
   @SubscribeMessage('list:card:create')
-  handleCreateCard(@ConnectedSocket() socket: Socket, @MessageBody() request: CreateCardRequest) {
+  async handleCreateCard(@ConnectedSocket() socket: Socket, @MessageBody() request: CreateCardRequest) {
     const user: RetroUser = socket.data.user;
-    const card = this.service.createCard(request.listId, request.clientId, request.message, user);
+    const card = await this.service.createCard(request.listId, request.message, user, request.clientId);
     this.server.to(user.boardId).emit('list:card:created', { card: card } as CardCreatedEvent);
   }
 
   @SubscribeMessage('list:card:delete')
-  handleDeleteCard(@ConnectedSocket() socket: Socket, @MessageBody() request: DeleteCardRequest) {
+  async handleDeleteCard(@ConnectedSocket() socket: Socket, @MessageBody() request: DeleteCardRequest) {
     const user: RetroUser = socket.data.user;
-    this.service.deleteCard(request, user);
+    await this.service.deleteCard(request.cardId);
     this.server.to(user.boardId).emit('list:card:deleted', {
       cardId: request.cardId,
     } as CardDeletedEvent);
   }
 
   @SubscribeMessage('list:card:update')
-  handleUpdateCard(@ConnectedSocket() socket: Socket, @MessageBody() request: UpdateCardRequest) {
+  async handleUpdateCard(@ConnectedSocket() socket: Socket, @MessageBody() request: UpdateCardRequest) {
     const user: RetroUser = socket.data.user;
-    const card = this.service.updateCard(request.cardId, { message: request.message }, user);
+    const card = await this.service.updateCard(request.cardId, { message: request.message }, user);
     this.server.to(user.boardId).emit('list:card:updated', {
       card: card,
     } as CardUpdatedEvent);
   }
 
   @SubscribeMessage('list:card:move')
-  handleMoveCard(@ConnectedSocket() socket: Socket, @MessageBody() request: MoveCardRequest) {
+  async handleMoveCard(@ConnectedSocket() socket: Socket, @MessageBody() request: MoveCardRequest) {
     const user: RetroUser = socket.data.user;
-    const card = this.service.moveCard(request, user);
+    const card = await this.service.moveCard(request, user);
     this.server.to(user.boardId).emit('list:card:moved', {
       cardId: card.id,
       fromListId: request.fromListId,
@@ -62,24 +62,24 @@ export class CardGateway {
   @SubscribeMessage('list:card:vote')
   async handleVoteFor(@ConnectedSocket() socket: Socket, @MessageBody() request: VoteForCardRequest) {
     const user: RetroUser = socket.data.user;
-    const card = await this.service.upvoteCard(request.cardId, user);
-
-    this.logger.log(`[Board: ${user.boardId}] User ${user.id} voted for card: ${card.id}`);
-    this.server.to(user.boardId).emit('list:card:updated', {
-      card: card,
-    });
+    // const card = await this.service.upvoteCard(request.cardId, user);
+    //
+    // this.logger.log(`[Board: ${user.boardId}] User ${user.id} voted for card: ${card.id}`);
+    // this.server.to(user.boardId).emit('list:card:updated', {
+    //   card: card,
+    // });
   }
 
   @SubscribeMessage('list:card:unvote')
   async handleUnvoteFor(@ConnectedSocket() socket: Socket, @MessageBody() request: UnvoteForCardRequest) {
     const user: RetroUser = socket.data.user;
-    const card = await this.service.downvoteCard(request.cardId, user);
-
-    if (card) {
-      this.logger.log(`[Board: ${user.boardId}] User ${user.id} down-voted card: ${card.id}`);
-      this.server.to(user.boardId).emit('list:card:updated', {
-        card: card,
-      });
-    }
+    // const card = await this.service.downvoteCard(request.cardId, user);
+    //
+    // if (card) {
+    //   this.logger.log(`[Board: ${user.boardId}] User ${user.id} down-voted card: ${card.id}`);
+    //   this.server.to(user.boardId).emit('list:card:updated', {
+    //     card: card,
+    //   });
+    // }
   }
 }

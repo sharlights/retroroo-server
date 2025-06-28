@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { Board } from '../board.model';
 import { HeadspaceExercise } from './exercises/exercise.model';
 import { OneWordExercise } from './exercises/oneword-exercise';
+import { RetroBoard } from '../retro-board.dto';
 
 export class ExerciseNotSelectedException extends Error {
   constructor() {
@@ -24,7 +24,7 @@ export class ExerciseNotFoundException extends Error {
   }
 }
 
-type ExerciseFactory = (board: Board) => HeadspaceExercise;
+type ExerciseFactory = (board: RetroBoard) => HeadspaceExercise;
 
 @Injectable()
 export class HeadspaceService {
@@ -38,38 +38,38 @@ export class HeadspaceService {
     this.registry.set('one-word', (board) => new OneWordExercise(board));
   }
 
-  selectExercise(board: Board, exerciseId: string): HeadspaceExercise {
+  selectExercise(board: RetroBoard, exerciseId: string): HeadspaceExercise {
     const exerciseFactory = this.registry.get(exerciseId);
     if (!exerciseFactory) throw new ExerciseNotFoundException();
     const exercise = exerciseFactory(board);
-    this.activeExercises.set(board.getId(), exercise);
+    this.activeExercises.set(board.id, exercise);
     return exercise;
   }
 
-  startExercise(board: Board, onCompleteCallback: (boardId: string) => void): HeadspaceExercise {
-    const exercise = this.activeExercises.get(board.getId());
+  startExercise(board: RetroBoard, onCompleteCallback: (boardId: string) => void): HeadspaceExercise {
+    const exercise = this.activeExercises.get(board.id);
 
     if (!exercise || exercise.status !== 'SELECTED') {
       throw new ExerciseNotSelectedException();
     }
 
     exercise.start(() => {
-      this.activeExercises.delete(board.getId());
-      onCompleteCallback(board.getId());
+      this.activeExercises.delete(board.id);
+      onCompleteCallback(board.id);
     });
     return exercise;
   }
 
-  stopExercise(board: Board): HeadspaceExercise {
-    const exercise = this.activeExercises.get(board.getId());
+  stopExercise(board: RetroBoard): HeadspaceExercise {
+    const exercise = this.activeExercises.get(board.id);
     if (!exercise) throw new ExerciseNotFoundException();
     exercise.stop();
-    this.activeExercises.delete(board.getId());
+    this.activeExercises.delete(board.id);
     return exercise;
   }
 
-  resetExercise(board: Board): HeadspaceExercise {
-    const exercise = this.activeExercises.get(board.getId());
+  resetExercise(board: RetroBoard): HeadspaceExercise {
+    const exercise = this.activeExercises.get(board.id);
     if (!exercise) throw new ExerciseNotFoundException();
     exercise.reset();
     return exercise;

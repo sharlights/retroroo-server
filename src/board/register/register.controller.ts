@@ -22,19 +22,19 @@ export class RegisterController {
    * To register to an existing board, the user must present the JWT invite.
    */
   @Post('register')
-  joinOrCreateNewBoard(@Body('invite_token') inviteToken: string): any {
+  async joinOrCreateNewBoard(@Body('invite_token') inviteToken: string): Promise<any> {
     // Get the auth token from the post.
     const inviteJwt = this.authService.validateToken(inviteToken);
     const createNewBoard = !inviteJwt;
 
-    const boardId = createNewBoard ? this.boardService.createNewBoard().getId() : inviteJwt.boardId;
+    const boardId = createNewBoard ? (await this.boardService.createNewBoard()).id : inviteJwt.boardId;
     const role = createNewBoard ? 'facilitator' : 'participant';
 
-    const user = this.userService.createUser(boardId, crypto.randomUUID(), role);
+    const user = await this.userService.createUser(boardId, crypto.randomUUID(), role);
 
     if (createNewBoard) {
       // Create basic board
-      this.listService.createList(
+      await this.listService.createList(
         {
           title: 'What went well?',
           subtitle: 'Things we are happy about.',
@@ -45,7 +45,7 @@ export class RegisterController {
         },
         user,
       );
-      this.listService.createList(
+      await this.listService.createList(
         {
           title: 'What went less well?',
           subtitle: 'Things we could improve',
@@ -56,7 +56,7 @@ export class RegisterController {
         },
         user,
       );
-      this.listService.createList(
+      await this.listService.createList(
         {
           title: 'What do we want to try next?',
           subtitle: 'Things we could do differently',
@@ -67,7 +67,7 @@ export class RegisterController {
         },
         user,
       );
-      this.listService.createList(
+      await this.listService.createList(
         {
           title: 'What puzzles us?',
           subtitle: 'Unanswered questions we have.',

@@ -1,13 +1,13 @@
-import { Board } from '../../board.model';
+import { RetroBoard } from '../../retro-board.dto';
 
 export type ExerciseStatus = 'COMPLETED' | 'SELECTED' | 'IN_PROGRESS';
 
 export abstract class HeadspaceExercise {
   exerciseId: string;
-  board: Board;
+  board: RetroBoard;
   status: ExerciseStatus;
 
-  public constructor(exerciseId: string, board: Board, status: ExerciseStatus) {
+  public constructor(exerciseId: string, board: RetroBoard, status: ExerciseStatus) {
     this.exerciseId = exerciseId;
     this.board = board;
     this.status = status;
