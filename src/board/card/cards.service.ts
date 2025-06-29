@@ -6,6 +6,7 @@ import { RetroUser } from '../users/retro-user.dto';
 import { RetroCard } from './retro-card.dto';
 import { MoveCardRequest } from '../../websockets/model.dto';
 import { RetroListEntity } from '../lists/retro-list.entity';
+import { RetroVoteEntity } from './retro-card-vote.entity';
 
 @Injectable()
 export class CardsService {
@@ -14,6 +15,8 @@ export class CardsService {
   constructor(
     @InjectRepository(RetroCardEntity)
     private readonly cardRepo: Repository<RetroCardEntity>,
+    @InjectRepository(RetroVoteEntity)
+    private readonly voteRepo: Repository<RetroVoteEntity>,
   ) {}
 
   async createCard(listId: string, message: string, user: RetroUser, clientId?: string): Promise<RetroCard> {
@@ -78,13 +81,35 @@ export class CardsService {
       creatorId: card.creatorId,
       listId: card.list.id,
       message: card.message,
-      votes: votesMap,
-    };
+      votes: Object.fromEntries(votesMap),
+    } as RetroCard;
+  }
+
+  async saveCardVotes(cardId: string, userId: string, delta: number): Promise<void> {
+    let vote = await this.voteRepo.findOne({ where: { card: { id: cardId }, userId } });
+    if (!vote) {
+      vote = this.voteRepo.create({ userId, card: { id: cardId }, count: 0 });
+    }
+
+    vote.count += delta;
+    if (vote.count <= 0) {
+      vote.count = 0;
+    }
+
+    await this.voteRepo.save(vote);
   }
 
   public toCardDtos(cards: RetroCardEntity[]): RetroCard[] {
     return cards.map((card) => {
       return this.toCardDto(card);
     });
+  }
+
+  async getCard(cardId: string): Promise<RetroCard> {
+    const card = await this.cardRepo.findOneOrFail({
+      where: { id: cardId },
+      relations: { list: { board: true } },
+    });
+    return this.toCardDto(card);
   }
 }

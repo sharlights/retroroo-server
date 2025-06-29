@@ -9,7 +9,6 @@ import {
   CreateCardRequest,
   DeleteCardRequest,
   MoveCardRequest,
-  UnvoteForCardRequest,
   UpdateCardRequest,
   VoteForCardRequest,
 } from './model.dto';
@@ -62,24 +61,12 @@ export class CardGateway {
   @SubscribeMessage('list:card:vote')
   async handleVoteFor(@ConnectedSocket() socket: Socket, @MessageBody() request: VoteForCardRequest) {
     const user: RetroUser = socket.data.user;
-    // const card = await this.service.upvoteCard(request.cardId, user);
-    //
-    // this.logger.log(`[Board: ${user.boardId}] User ${user.id} voted for card: ${card.id}`);
-    // this.server.to(user.boardId).emit('list:card:updated', {
-    //   card: card,
-    // });
-  }
+    await this.service.saveCardVotes(request.cardId, user.id, request.voteDelta);
 
-  @SubscribeMessage('list:card:unvote')
-  async handleUnvoteFor(@ConnectedSocket() socket: Socket, @MessageBody() request: UnvoteForCardRequest) {
-    const user: RetroUser = socket.data.user;
-    // const card = await this.service.downvoteCard(request.cardId, user);
-    //
-    // if (card) {
-    //   this.logger.log(`[Board: ${user.boardId}] User ${user.id} down-voted card: ${card.id}`);
-    //   this.server.to(user.boardId).emit('list:card:updated', {
-    //     card: card,
-    //   });
-    // }
+    const updatedCard = await this.service.getCard(request.cardId);
+    this.logger.log(`[Board: ${user.boardId}] User ${user.id} voted for card: ${updatedCard.id}`);
+    this.server.to(user.boardId).emit('list:card:updated', {
+      card: updatedCard,
+    } as CardUpdatedEvent);
   }
 }

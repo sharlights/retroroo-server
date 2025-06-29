@@ -5,5 +5,5 @@ export class RetroCard {
   /* The client id is the unique id that was created on the client app */
   clientId: string;
   message: string;
-  votes: Map<string, number>;
+  votes: { [userId: string]: number };
 }

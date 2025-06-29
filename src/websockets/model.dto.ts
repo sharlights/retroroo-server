@@ -9,10 +9,7 @@ import { RetroUser } from '../board/users/retro-user.dto';
  */
 export interface VoteForCardRequest {
   cardId: string;
-}
-
-export interface UnvoteForCardRequest {
-  cardId: string;
+  voteDelta: number;
 }
 
 export interface CreateCardRequest {
