@@ -18,6 +18,7 @@ export class UserService {
   ) {}
 
   async createUser(boardId: string, userId: string, role: BoardRole): Promise<RetroUser> {
+    this.logger.log(`[Board: ${boardId}] Creating new User: ${userId}`);
     const entity = this.userRepo.create({ id: userId, board: { id: boardId }, role });
     const saved = await this.userRepo.save(entity);
     return this.toDto(saved);

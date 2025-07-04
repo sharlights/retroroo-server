@@ -18,11 +18,13 @@ export class ListsService {
   ) {}
 
   async getBoardLists(boardId: string): Promise<RetroList[]> {
-    const entities = await this.listRepo.find({
-      where: { board: { id: boardId } },
-      relations: ['cards'],
-    });
-    return entities.map((e) => this.toDto(e));
+    if (boardId) {
+      const entities = await this.listRepo.find({
+        where: { board: { id: boardId } },
+        relations: ['cards'],
+      });
+      return entities.map((e) => this.toDto(e));
+    }
   }
 
   async createList(newList: Partial<RetroList>, user: RetroUser): Promise<RetroList> {

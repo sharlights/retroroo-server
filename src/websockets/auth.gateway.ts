@@ -5,7 +5,7 @@ import { BoardService } from '../board/board.service';
 import { Logger } from '@nestjs/common';
 import { UserService } from '../board/users/user.service';
 import { RetroUser } from '../board/users/retro-user.dto';
-import { UserUpdatedPayload } from './model.dto';
+import { StageChangedEvent, UserUpdatedPayload } from './model.dto';
 
 @WebSocketGateway()
 export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -50,7 +50,7 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     const boardId = jwtPayload.boardId;
-    const board = this.boardService.getBoard(boardId);
+    const board = await this.boardService.getBoard(boardId);
     if (!board) {
       socket.disconnect();
       this.logger.error(`[Socket] Board does not exist: ${jwtPayload.boardId} `);
@@ -62,22 +62,24 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     socket.setMaxListeners(30);
     socket.join(boardId);
 
-    // Create or get user
-    let user: RetroUser = await this.userService.getUser(jwtPayload.sub);
+    // User should already exist via the registration process.
+    const user: RetroUser = await this.userService.getUser(jwtPayload.sub);
 
-    if (!user) {
-      user = await this.userService.createUser(boardId, jwtPayload.sub, jwtPayload.role);
+    await this.userService.userConnected(user.id);
 
-      const usersInBoard = await this.userService.getUsers(boardId);
-      this.server.to(boardId).emit('board:users:updated', {
-        users: usersInBoard,
-      } as UserUpdatedPayload);
-    } else {
-      await this.userService.userConnected(user.id);
-    }
+    const usersInBoard = await this.userService.getActiveUsers(boardId);
+
+    // Tell everyone a new user has joined!
+    this.server.to(boardId).emit('board:users:updated', {
+      users: usersInBoard,
+    } as UserUpdatedPayload);
+
+    // Tell the new user the current board stage.
+    socket.emit('board:stage:updated', {
+      stage: board.stage,
+    } as StageChangedEvent);
 
     socket.data.user = user;
-
     socket.emit('board:joined', { success: true });
   }
 }
