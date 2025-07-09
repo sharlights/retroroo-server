@@ -13,14 +13,23 @@ import { RetroBoardEntity } from './retro-board.entity';
 import { RetroCardEntity } from './card/retro-card.entity';
 import { RetroListEntity } from './lists/retro-list.entity';
 import { RetroVoteEntity } from './card/retro-card-vote.entity';
+import { StageService } from './stage/stage.service';
+import { RetroStageFinishedEntity } from './stage/retro-stage-finished.entity';
 
 @Module({
   imports: [
     AuthModule,
-    TypeOrmModule.forFeature([RetroUserEntity, RetroBoardEntity, RetroCardEntity, RetroListEntity, RetroVoteEntity]),
+    TypeOrmModule.forFeature([
+      RetroUserEntity,
+      RetroBoardEntity,
+      RetroCardEntity,
+      RetroListEntity,
+      RetroVoteEntity,
+      RetroStageFinishedEntity,
+    ]),
   ],
-  providers: [BoardService, ListsService, InviteService, HeadspaceService, UserService, CardsService],
+  providers: [BoardService, ListsService, InviteService, HeadspaceService, UserService, CardsService, StageService],
   controllers: [RegisterController],
-  exports: [BoardService, ListsService, InviteService, HeadspaceService, UserService, CardsService],
+  exports: [BoardService, ListsService, InviteService, HeadspaceService, UserService, CardsService, StageService],
 })
 export class BoardModule {}

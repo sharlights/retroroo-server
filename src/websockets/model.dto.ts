@@ -126,3 +126,13 @@ export interface ChangeStageRequest {
 export interface StageChangedEvent {
   stage: RetroStage;
 }
+
+export interface UpdateStageFinishedRequest {
+  stage: RetroStage;
+  finished: boolean;
+}
+
+export interface StageMetadataUpdatedEvent {
+  stage: RetroStage;
+  finishedUsers: string[];
+}
