@@ -1,4 +1,4 @@
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, ConnectedSocket, MessageBody } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtPayload } from '../auth/jtw.payload.interface';
 import { SocketErrorResponse } from './socket.core.messages';
@@ -6,6 +6,7 @@ import { BoardService } from '../board/board.service';
 import { HeadspaceService } from '../board/headspace/headspace.service';
 import { ActionRequest, ExerciseRequest } from './model.dto';
 import { RetroUser } from '../board/users/retro-user.dto';
+import { RetroStage } from '../types/stages';
 
 @WebSocketGateway()
 export class HeadspaceGateway {
@@ -43,9 +44,9 @@ export class HeadspaceGateway {
 
       const data = this.headspaceService.startExercise(board, async (boardId) => {
         // advance stage on completion
-        this.boardService.updateStage(board.id, 'explore');
+        this.boardService.updateStage(board.id, RetroStage.EXPLORE);
         this.server.to(boardId).emit('headspace:exercise:completed', { exerciseId });
-        this.server.to(boardId).emit('stage-changed', { stage: 'explore' });
+        this.server.to(boardId).emit('stage-changed', { stage: RetroStage.EXPLORE });
       });
 
       this.server.to(board.id).emit('headspace:exercise:started', data);

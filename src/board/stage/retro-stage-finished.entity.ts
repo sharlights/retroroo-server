@@ -3,7 +3,7 @@ import { RetroStage } from '../../types/stages';
 import { RetroUserEntity } from '../users/retro-user.entity';
 import { RetroBoardEntity } from '../retro-board.entity';
 
-@Entity('stage_completion')
+@Entity('stage_finished')
 @Unique(['stage', 'board', 'user'])
 export class RetroStageFinishedEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -14,7 +14,8 @@ export class RetroStageFinishedEntity {
 
   @Column({
     type: 'enum',
-    enum: ['headspace', 'explore', 'vote', 'discuss', 'done'],
+    enum: RetroStage,
+    enumName: 'stage',
   })
   stage: RetroStage;
 

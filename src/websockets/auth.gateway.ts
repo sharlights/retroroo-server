@@ -46,8 +46,9 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const jwtPayload = this.authService.validateToken(token);
 
     if (!jwtPayload) {
-      socket.disconnect();
       this.logger.error(`[Socket] Forced Disconnection: ${socket.id} - invalid token`);
+      socket.emit('auth:error', 'Invalid token');
+      socket.disconnect();
       return;
     }
 
@@ -77,15 +78,11 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     } as UserUpdatedPayload);
 
     // Tell the new user the current board stage.
+    const finishedUsers = await this.stageService.getFinished(boardId, board.stage);
     socket.emit('board:stage:updated', {
       stage: board.stage,
-    } as StageChangedEvent);
-
-    const finishedUsers = await this.stageService.getFinished(boardId, board.stage);
-    this.server.to(board.id).emit('board:stage:metadata:updated', {
-      stage: board.stage,
       finishedUsers: finishedUsers,
-    } as StageMetadataUpdatedEvent);
+    } as StageChangedEvent);
 
     socket.data.user = user;
     socket.emit('board:joined', { success: true });

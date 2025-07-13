@@ -125,6 +125,7 @@ export interface ChangeStageRequest {
 
 export interface StageChangedEvent {
   stage: RetroStage;
+  finishedUsers: string[];
 }
 
 export interface UpdateStageFinishedRequest {

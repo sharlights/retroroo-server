@@ -54,12 +54,13 @@ export class StageGateway {
     }
     const newStage = changeStageRequest.stage;
 
-    const board = await this.boardService.getBoard(user.boardId);
-    await this.boardService.updateStage(board.id, newStage);
+    const board = await this.boardService.updateStage(user.boardId, newStage);
+    const finishedUsers: string[] = await this.stageService.getFinished(board.id, board.stage);
 
     this.logger.log(`[Board: ${board.id}] Stage changed to: ${newStage}`);
     this.server.to(board.id).emit('board:stage:updated', {
       stage: newStage,
+      finishedUsers: finishedUsers,
     } as StageChangedEvent);
   }
 }

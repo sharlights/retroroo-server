@@ -1,1 +1,8 @@
-export type RetroStage = 'headspace' | 'explore' | 'vote' | 'discuss' | 'done';
+export enum RetroStage {
+  HEADSPACE = 'headspace',
+  EXPLORE = 'explore',
+  VOTE = 'vote',
+  DISCUSS = 'discuss',
+  REVIEW = 'review',
+  DONE = 'done',
+}

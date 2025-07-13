@@ -50,7 +50,7 @@ export class BoardService {
   async createNewBoard(): Promise<RetroBoard> {
     const board = this.boardRepo.create({
       id: crypto.randomUUID(),
-      stage: 'explore',
+      stage: RetroStage.EXPLORE,
     });
     const saved = await this.boardRepo.save(board);
     this.logger.log(`[Board: ${saved.id}] Created`);

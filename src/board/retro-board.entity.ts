@@ -11,7 +11,8 @@ export class RetroBoardEntity {
 
   @Column({
     type: 'enum',
-    enum: ['headspace', 'explore', 'vote', 'discuss', 'done'],
+    enum: RetroStage,
+    enumName: 'stage',
   })
   stage: RetroStage;
 }
