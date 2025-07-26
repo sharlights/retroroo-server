@@ -2,6 +2,7 @@ import { RetroCard } from '../board/card/retro-card.dto';
 import { RetroList } from '../board/lists/retro-list.dto';
 import { RetroUser } from '../board/users/retro-user.dto';
 import { RetroStage } from '../types/stages';
+import { RetroActionDto } from '../actions/retroActionDto';
 
 /**
  *
@@ -136,4 +137,21 @@ export interface UpdateStageFinishedRequest {
 export interface StageMetadataUpdatedEvent {
   stage: RetroStage;
   finishedUsers: string[];
+}
+
+/**
+ * Actions
+ */
+export interface ActionCreateRequest {
+  description: string;
+}
+
+export interface ActionUpdatedEvent {
+  action: RetroActionDto;
+}
+
+export interface ActionGetRequest {}
+
+export interface ActionGetEvent {
+  actions: RetroActionDto[];
 }

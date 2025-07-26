@@ -6,6 +6,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { WebsocketsModule } from './websockets/websockets.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { loadDatabaseConfig } from './core/db/database.config';
+import { ActionModule } from './actions/action.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { loadDatabaseConfig } from './core/db/database.config';
     WebsocketsModule,
     BoardModule,
     AuthModule,
+    ActionModule,
     ConfigModule.forRoot({
       envFilePath: `.env.${process.env.NODE_ENV || 'dev'}`,
       isGlobal: true,

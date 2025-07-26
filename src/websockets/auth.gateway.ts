@@ -5,8 +5,16 @@ import { BoardService } from '../board/board.service';
 import { Logger } from '@nestjs/common';
 import { UserService } from '../board/users/user.service';
 import { RetroUser } from '../board/users/retro-user.dto';
-import { StageChangedEvent, StageMetadataUpdatedEvent, UserUpdatedPayload } from './model.dto';
+import {
+  ActionGetEvent,
+  ActionUpdatedEvent,
+  StageChangedEvent,
+  StageMetadataUpdatedEvent,
+  UserUpdatedPayload,
+} from './model.dto';
 import { StageService } from '../board/stage/stage.service';
+import { RetroActionDto } from '../actions/retroActionDto';
+import { ActionsService } from 'src/actions/actions.service';
 
 @WebSocketGateway()
 export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -18,6 +26,7 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private boardService: BoardService,
     private userService: UserService,
     private stageService: StageService,
+    private actionsService: ActionsService,
   ) {}
 
   async handleDisconnect(socket: Socket) {
@@ -83,6 +92,12 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
       stage: board.stage,
       finishedUsers: finishedUsers,
     } as StageChangedEvent);
+
+    const allActions: RetroActionDto[] = await this.actionsService.getAll(user);
+    this.logger.log(`[Socket] All actions:`, allActions);
+    socket.emit('actions:get', {
+      actions: allActions,
+    } as ActionGetEvent);
 
     socket.data.user = user;
     socket.emit('board:joined', { success: true });
