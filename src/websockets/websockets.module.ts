@@ -9,9 +9,20 @@ import { AuthModule } from 'src/auth/auth.module';
 import { CardGateway } from './card.gateway';
 import { ActionModule } from '../actions/action.module';
 import { ActionGateway } from './action.gateway';
+import { DecisionGateway } from './decision.gateway';
+import { DecisionModule } from '../decision/decision.module';
 
 @Module({
-  imports: [BoardModule, AuthModule, ActionModule],
-  providers: [StageGateway, ListsGateway, HeadspaceGateway, AuthGateway, InviteGateway, CardGateway, ActionGateway],
+  imports: [BoardModule, AuthModule, ActionModule, DecisionModule],
+  providers: [
+    StageGateway,
+    DecisionGateway,
+    ListsGateway,
+    HeadspaceGateway,
+    AuthGateway,
+    InviteGateway,
+    CardGateway,
+    ActionGateway,
+  ],
 })
 export class WebsocketsModule {}

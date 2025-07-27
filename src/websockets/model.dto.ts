@@ -3,6 +3,7 @@ import { RetroList } from '../board/lists/retro-list.dto';
 import { RetroUser } from '../board/users/retro-user.dto';
 import { RetroStage } from '../types/stages';
 import { RetroActionDto } from '../actions/retroActionDto';
+import { RetroDecisionDto } from '../decision/retro-decision.dto';
 
 /**
  *
@@ -154,4 +155,21 @@ export interface ActionGetRequest {}
 
 export interface ActionGetEvent {
   actions: RetroActionDto[];
+}
+
+/**
+ * Decisions
+ */
+export interface DecisionCreateRequest {
+  description: string;
+}
+
+export interface DecisionUpdatedEvent {
+  decision: RetroDecisionDto;
+}
+
+export interface DecisionGetRequest {}
+
+export interface DecisionGetEvent {
+  decisions: RetroDecisionDto[];
 }
