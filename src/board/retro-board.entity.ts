@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { RetroStage } from '../types/stages';
+import { IntentionEntity } from '../intent/retro-intent.entity';
 
 @Entity('board')
 export class RetroBoardEntity {
@@ -15,4 +16,10 @@ export class RetroBoardEntity {
     enumName: 'stage',
   })
   stage: RetroStage;
+
+  @ManyToOne(() => IntentionEntity, {
+    eager: true,
+    cascade: false,
+  })
+  intention: IntentionEntity;
 }
