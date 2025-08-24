@@ -78,6 +78,7 @@ export class BoardService {
       id: entity.id,
       createdDate: entity.createdDate,
       stage: entity.stage,
+      intent: entity.intention,
     };
   }
 }
