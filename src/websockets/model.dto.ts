@@ -4,6 +4,14 @@ import { RetroUser } from '../board/users/retro-user.dto';
 import { RetroStage } from '../types/stages';
 import { RetroActionDto } from '../actions/retroActionDto';
 import { RetroDecisionDto } from '../decision/retro-decision.dto';
+import { RetroBoard } from '../board/retro-board.dto';
+
+/**
+ * Board
+ */
+export interface BoardGetEvent {
+  board: RetroBoard;
+}
 
 /**
  *

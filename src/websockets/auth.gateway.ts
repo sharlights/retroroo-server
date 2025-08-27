@@ -5,7 +5,7 @@ import { BoardService } from '../board/board.service';
 import { Logger } from '@nestjs/common';
 import { UserService } from '../board/users/user.service';
 import { RetroUser } from '../board/users/retro-user.dto';
-import { ActionGetEvent, StageChangedEvent, UserUpdatedPayload } from './model.dto';
+import { ActionGetEvent, BoardGetEvent, StageChangedEvent, UserUpdatedPayload } from './model.dto';
 import { StageService } from '../board/stage/stage.service';
 import { RetroActionDto } from '../actions/retroActionDto';
 import { ActionsService } from 'src/actions/actions.service';
@@ -91,6 +91,10 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     socket.emit('actions:get', {
       actions: allActions,
     } as ActionGetEvent);
+
+    socket.emit('board:updated', {
+      board: board,
+    } as BoardGetEvent);
 
     socket.data.user = user;
     socket.emit('board:joined', { success: true });
