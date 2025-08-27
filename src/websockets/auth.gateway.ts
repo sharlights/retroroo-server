@@ -5,13 +5,7 @@ import { BoardService } from '../board/board.service';
 import { Logger } from '@nestjs/common';
 import { UserService } from '../board/users/user.service';
 import { RetroUser } from '../board/users/retro-user.dto';
-import {
-  ActionGetEvent,
-  ActionUpdatedEvent,
-  StageChangedEvent,
-  StageMetadataUpdatedEvent,
-  UserUpdatedPayload,
-} from './model.dto';
+import { ActionGetEvent, StageChangedEvent, UserUpdatedPayload } from './model.dto';
 import { StageService } from '../board/stage/stage.service';
 import { RetroActionDto } from '../actions/retroActionDto';
 import { ActionsService } from 'src/actions/actions.service';
@@ -56,7 +50,7 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     if (!jwtPayload) {
       this.logger.error(`[Socket] Forced Disconnection: ${socket.id} - invalid token`);
-      socket.emit('auth:error', 'Invalid token');
+      socket.emit('auth:token_invalid', 'Invalid token');
       socket.disconnect();
       return;
     }
@@ -94,7 +88,6 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     } as StageChangedEvent);
 
     const allActions: RetroActionDto[] = await this.actionsService.getAll(user);
-    this.logger.log(`[Socket] All actions:`, allActions);
     socket.emit('actions:get', {
       actions: allActions,
     } as ActionGetEvent);
