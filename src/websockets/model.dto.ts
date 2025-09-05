@@ -2,14 +2,15 @@ import { RetroCard } from '../board/card/retro-card.dto';
 import { RetroList } from '../board/lists/retro-list.dto';
 import { RetroUser } from '../board/users/retro-user.dto';
 import { RetroStage } from '../types/stages';
-import { RetroActionDto } from '../actions/retroActionDto';
-import { RetroDecisionDto } from '../decision/retro-decision.dto';
+import { RetroDecision } from '../decision/retro.decision';
 import { RetroBoard } from '../board/retro-board.dto';
+import { RetroIntent } from '../intent/retro-intent.dto';
+import { RetroAction } from '../actions/retro-action';
 
 /**
  * Board
  */
-export interface BoardGetEvent {
+export interface BoardUpdatedEvent {
   board: RetroBoard;
 }
 
@@ -156,13 +157,13 @@ export interface ActionCreateRequest {
 }
 
 export interface ActionUpdatedEvent {
-  action: RetroActionDto;
+  action: RetroAction;
 }
 
 export interface ActionGetRequest {}
 
 export interface ActionGetEvent {
-  actions: RetroActionDto[];
+  actions: RetroAction[];
 }
 
 /**
@@ -173,11 +174,18 @@ export interface DecisionCreateRequest {
 }
 
 export interface DecisionUpdatedEvent {
-  decision: RetroDecisionDto;
+  decision: RetroDecision;
 }
 
 export interface DecisionGetRequest {}
 
 export interface DecisionGetEvent {
-  decisions: RetroDecisionDto[];
+  decisions: RetroDecision[];
+}
+
+/**
+ * Intentions
+ */
+export interface IntentSelectRequest {
+  selectedIntent: RetroIntent;
 }

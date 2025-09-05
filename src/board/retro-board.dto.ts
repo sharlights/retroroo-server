@@ -5,5 +5,5 @@ export interface RetroBoard {
   id: string;
   createdDate: Date;
   stage: RetroStage;
-  intent: RetroIntent;
+  intention: RetroIntent;
 }

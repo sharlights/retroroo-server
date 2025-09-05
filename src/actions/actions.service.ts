@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { RetroUser } from '../board/users/retro-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RetroActionEntity } from './retroActionEntity';
-import { RetroActionDto } from './retroActionDto';
+import { RetroActionEntity } from './retro-action.entity';
+import { RetroAction } from './retro-action';
 
 @Injectable()
 export class ActionsService {
@@ -32,11 +32,11 @@ export class ActionsService {
     return actions.map(this.toActionDto);
   }
 
-  public toActionDto(action: RetroActionEntity): RetroActionDto {
+  public toActionDto(action: RetroActionEntity): RetroAction {
     return {
       id: action.id,
       description: action.description,
       createdBy: action.createdBy.id,
-    } as RetroActionDto;
+    } as RetroAction;
   }
 }

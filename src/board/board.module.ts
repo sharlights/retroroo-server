@@ -15,7 +15,7 @@ import { RetroListEntity } from './lists/retro-list.entity';
 import { RetroVoteEntity } from './card/retro-card-vote.entity';
 import { StageService } from './stage/stage.service';
 import { RetroStageFinishedEntity } from './stage/retro-stage-finished.entity';
-import { IntentionEntity } from '../intent/retro-intent.entity';
+import { RetroIntentEntity } from '../intent/retro-intent.entity';
 
 @Module({
   imports: [
@@ -27,7 +27,7 @@ import { IntentionEntity } from '../intent/retro-intent.entity';
       RetroListEntity,
       RetroVoteEntity,
       RetroStageFinishedEntity,
-      IntentionEntity,
+      RetroIntentEntity,
     ]),
   ],
   providers: [BoardService, ListsService, InviteService, HeadspaceService, UserService, CardsService, StageService],

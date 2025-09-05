@@ -1,14 +1,23 @@
-import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+  ConnectedSocket,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+  WsException,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
 import { BoardService } from '../board/board.service';
 import { Logger } from '@nestjs/common';
 import { UserService } from '../board/users/user.service';
 import { RetroUser } from '../board/users/retro-user.dto';
-import { ActionGetEvent, BoardGetEvent, StageChangedEvent, UserUpdatedPayload } from './model.dto';
+import { ActionGetEvent, BoardUpdatedEvent, StageChangedEvent, UserUpdatedPayload } from './model.dto';
 import { StageService } from '../board/stage/stage.service';
-import { RetroActionDto } from '../actions/retroActionDto';
 import { ActionsService } from 'src/actions/actions.service';
+import { InviteService } from '../board/invite/invite.service';
+import { RetroAction } from '../actions/retro-action';
 
 @WebSocketGateway()
 export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -21,6 +30,7 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private userService: UserService,
     private stageService: StageService,
     private actionsService: ActionsService,
+    private inviteService: InviteService,
   ) {}
 
   async handleDisconnect(socket: Socket) {
@@ -87,16 +97,28 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
       finishedUsers: finishedUsers,
     } as StageChangedEvent);
 
-    const allActions: RetroActionDto[] = await this.actionsService.getAll(user);
+    const allActions: RetroAction[] = await this.actionsService.getAll(user);
     socket.emit('actions:get', {
       actions: allActions,
     } as ActionGetEvent);
 
     socket.emit('board:updated', {
       board: board,
-    } as BoardGetEvent);
+    } as BoardUpdatedEvent);
 
     socket.data.user = user;
     socket.emit('board:joined', { success: true });
+  }
+
+  @SubscribeMessage('board:invite:token:create')
+  async handleInvite(@ConnectedSocket() socket: Socket) {
+    const user: RetroUser = socket.data.user;
+
+    // Anyone can invite, they only have to be associated to a retrospective.
+    if (!user || user.role != 'facilitator') throw new WsException('Unauthorized');
+
+    const token = this.inviteService.createInviteToken(user.boardId, 'participant');
+    this.logger.log(`[Board: ${user.boardId}] Creating invite token`);
+    return { invite_token: token };
   }
 }

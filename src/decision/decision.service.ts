@@ -3,7 +3,7 @@ import { RetroUser } from '../board/users/retro-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RetroDecisionEntity } from './retro-decision.entity';
-import { RetroDecisionDto } from './retro-decision.dto';
+import { RetroDecision } from './retro.decision';
 
 @Injectable()
 export class DecisionService {
@@ -32,11 +32,11 @@ export class DecisionService {
     return actions.map(this.toDecisionDto);
   }
 
-  public toDecisionDto(action: RetroDecisionEntity): RetroDecisionDto {
+  public toDecisionDto(action: RetroDecisionEntity): RetroDecision {
     return {
       id: action.id,
       description: action.description,
       createdBy: action.createdBy.id,
-    } as RetroDecisionDto;
+    } as RetroDecision;
   }
 }
