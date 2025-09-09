@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { RetroTemplateEntity } from './retro-template.entity';
 
 @Entity('retro_template_list')
@@ -7,6 +7,7 @@ export class RetroTemplateListEntity {
   id: string;
 
   @ManyToOne(() => RetroTemplateEntity, { onDelete: 'CASCADE', eager: true })
+  @JoinColumn({ name: 'template_id', referencedColumnName: 'id' })
   template: RetroTemplateEntity;
 
   @Column()

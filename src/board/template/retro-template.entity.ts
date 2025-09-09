@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { RetroIntentEntity } from '../../intent/retro-intent.entity';
 import { RetroTemplateListEntity } from './retro-template-list.entity';
 
@@ -16,10 +16,11 @@ export class RetroTemplateEntity {
   @Column()
   version: string;
 
-  @Column()
+  @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
   @ManyToOne(() => RetroIntentEntity, { nullable: false, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'intention_id', referencedColumnName: 'id' })
   intention: RetroIntentEntity;
 
   @OneToMany(() => RetroTemplateListEntity, (list) => list.template, {
