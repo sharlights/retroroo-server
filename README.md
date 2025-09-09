@@ -17,42 +17,24 @@
 $ npm install
 ```
 
-## Running the app
+
+
+## Migrations
+
+TypeORM has been set up to manage database migrations. To create a new migration, use the following command:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+$ npm run migration:create 
 ```
 
-## Test
+You can also perform a scaffolding migration with:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+$ npm run migration:generate ./src/migrations/<Name>
 ```
 
-## Support
+Once you've created a migration, you can run it with:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+```bash
+$ npm run migration:run 
+```

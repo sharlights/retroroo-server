@@ -1,15 +1,15 @@
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RetroListEntity } from './retro-list.entity';
 import { RetroUser } from '../users/retro-user.dto';
 import { RetroList } from './retro-list.dto';
 import { CardsService } from '../card/cards.service';
-import { RetroVoteEntity } from '../card/retro-card-vote.entity';
+import { RetroBoard } from '../retro-board.dto';
 
 @Injectable()
-export class ListsService {
-  private readonly logger = new Logger(ListsService.name);
+export class ListService {
+  private readonly logger = new Logger(ListService.name);
 
   constructor(
     @InjectRepository(RetroListEntity)
@@ -77,23 +77,4 @@ export class ListsService {
     };
   }
 
-  async upvoteCard(cardId: string, user: RetroUser): Promise<void> {
-    const list = await this.listRepo.findOneOrFail({
-      where: { board: { id: user.boardId }, cards: { id: cardId } },
-      relations: ['cards', 'cards.votes'],
-    });
-
-    const card = list.cards.find((c) => c.id === cardId);
-    if (!card) throw new NotFoundException('Card not found');
-
-    let vote = card.votes.find((v) => v.userId === user.id);
-    if (!vote) {
-      vote = { userId: user.id, count: 1 } as RetroVoteEntity;
-      card.votes.push(vote);
-    } else {
-      vote.count++;
-    }
-
-    await this.listRepo.save(list);
-  }
 }

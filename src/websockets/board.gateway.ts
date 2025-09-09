@@ -26,11 +26,12 @@ import {
 import { RetroUser } from '../board/users/retro-user.dto';
 import { CardsService } from '../board/card/cards.service';
 import { DecisionService } from '../decision/decision.service';
-import { ListsService } from '../board/lists/lists.service';
+import { ListService } from '../board/lists/list.service';
 import { ActionsService } from '../actions/actions.service';
 import { BoardService } from '../board/board.service';
 import { RetroIntent } from '../intent/retro-intent.dto';
 import { RetroAction } from '../actions/retro-action';
+import { TemplateService } from '../board/template/retro-template.service';
 
 @WebSocketGateway()
 export class BoardGateway {
@@ -39,9 +40,10 @@ export class BoardGateway {
   constructor(
     private readonly cardsService: CardsService,
     private readonly decisionService: DecisionService,
-    private readonly listService: ListsService,
+    private readonly listService: ListService,
     private readonly actionService: ActionsService,
     private readonly boardService: BoardService,
+    private readonly templateService: TemplateService,
   ) {}
 
   @SubscribeMessage('list:card:create')
@@ -172,6 +174,10 @@ export class BoardGateway {
     const updatedBoard = await this.boardService.updateBoard(boardId, {
       intention: selectedIntent,
     });
+
+    // Generate the retro workflow based on the selected intent. This will create setup the content
+    // for the headspace and main board.
+    this.templateService.createListsFromTemplate(updatedBoard, user);
 
     this.server.to(user.boardId).emit('board:updated', { board: updatedBoard } as BoardUpdatedEvent);
   }

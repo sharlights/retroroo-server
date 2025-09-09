@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BoardService } from './board.service';
 import { AuthModule } from '../auth/auth.module';
-import { ListsService } from './lists/lists.service';
+import { ListService } from './lists/list.service';
 import { RegisterController } from './register/register.controller';
 import { InviteService } from './invite/invite.service';
 import { HeadspaceService } from './headspace/headspace.service';
@@ -16,6 +16,9 @@ import { RetroVoteEntity } from './card/retro-card-vote.entity';
 import { StageService } from './stage/stage.service';
 import { RetroStageFinishedEntity } from './stage/retro-stage-finished.entity';
 import { RetroIntentEntity } from '../intent/retro-intent.entity';
+import { RetroTemplateEntity } from './template/retro-template.entity';
+import { RetroTemplateListEntity } from './template/retro-template-list.entity';
+import { TemplateService } from './template/retro-template.service';
 
 @Module({
   imports: [
@@ -28,10 +31,30 @@ import { RetroIntentEntity } from '../intent/retro-intent.entity';
       RetroVoteEntity,
       RetroStageFinishedEntity,
       RetroIntentEntity,
+      RetroTemplateEntity,
+      RetroTemplateListEntity,
     ]),
   ],
-  providers: [BoardService, ListsService, InviteService, HeadspaceService, UserService, CardsService, StageService],
+  providers: [
+    BoardService,
+    ListService,
+    InviteService,
+    HeadspaceService,
+    UserService,
+    CardsService,
+    StageService,
+    TemplateService,
+  ],
   controllers: [RegisterController],
-  exports: [BoardService, ListsService, InviteService, HeadspaceService, UserService, CardsService, StageService],
+  exports: [
+    BoardService,
+    ListService,
+    InviteService,
+    HeadspaceService,
+    UserService,
+    CardsService,
+    StageService,
+    TemplateService,
+  ],
 })
 export class BoardModule {}
