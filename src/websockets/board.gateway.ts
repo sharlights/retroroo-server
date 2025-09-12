@@ -170,14 +170,13 @@ export class BoardGateway {
     const selectedIntent: RetroIntent = request.selectedIntent;
     const boardId: string = socket.data.boardId;
 
-    // Update the intent on the board.
-    const updatedBoard = await this.boardService.updateBoard(boardId, {
-      intention: selectedIntent,
-    });
-
     // Generate the retro workflow based on the selected intent. This will create setup the content
     // for the headspace and main board.
-    this.templateService.createListsFromTemplate(updatedBoard, user);
+    const newLists = await this.templateService.createListsFromTemplate(boardId, selectedIntent);
+    const updatedBoard = await this.boardService.updateBoard(boardId, {
+      intention: selectedIntent,
+      lists: newLists,
+    });
 
     this.server.to(user.boardId).emit('board:updated', { board: updatedBoard } as BoardUpdatedEvent);
   }

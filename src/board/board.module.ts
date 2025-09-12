@@ -19,6 +19,9 @@ import { RetroIntentEntity } from '../intent/retro-intent.entity';
 import { RetroTemplateEntity } from './template/retro-template.entity';
 import { RetroTemplateListEntity } from './template/retro-template-list.entity';
 import { TemplateService } from './template/retro-template.service';
+import { BoardViewMapper } from './board-view-mapper';
+import { ListViewMapper } from './lists/list-view-mapper';
+import { CardViewMapper } from './card/card-view-mapper';
 
 @Module({
   imports: [
@@ -44,6 +47,9 @@ import { TemplateService } from './template/retro-template.service';
     CardsService,
     StageService,
     TemplateService,
+    ListViewMapper,
+    CardViewMapper,
+    BoardViewMapper,
   ],
   controllers: [RegisterController],
   exports: [
@@ -55,6 +61,8 @@ import { TemplateService } from './template/retro-template.service';
     CardsService,
     StageService,
     TemplateService,
+    ListViewMapper,
+    CardViewMapper,
   ],
 })
 export class BoardModule {}

@@ -2,7 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { RetroBoardEntity } from '../board/retro-board.entity';
 import { RetroUserEntity } from '../board/users/retro-user.entity';
 
-@Entity('actions')
+@Entity('decisions')
 export class RetroDecisionEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

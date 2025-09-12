@@ -1,12 +1,13 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RetroCardEntity } from '../card/retro-card.entity';
 import { RetroUser } from '../users/retro-user.dto';
 import { RetroCard } from './retro-card.dto';
 import { MoveCardRequest } from '../../websockets/model.dto';
 import { RetroListEntity } from '../lists/retro-list.entity';
 import { RetroVoteEntity } from './retro-card-vote.entity';
+import { CardViewMapper } from './card-view-mapper';
+import { RetroCardEntity } from './retro-card.entity';
 
 @Injectable()
 export class CardsService {
@@ -17,6 +18,7 @@ export class CardsService {
     private readonly cardRepo: Repository<RetroCardEntity>,
     @InjectRepository(RetroVoteEntity)
     private readonly voteRepo: Repository<RetroVoteEntity>,
+    private readonly cardViewMapper: CardViewMapper,
   ) {}
 
   async createCard(listId: string, message: string, user: RetroUser, clientId?: string): Promise<RetroCard> {
@@ -29,7 +31,7 @@ export class CardsService {
 
     this.logger.log(`[Board: ${user.boardId}] Card created`);
     await this.cardRepo.save(newCard);
-    return this.toCardDto(newCard);
+    return this.cardViewMapper.toCardDto(newCard);
   }
 
   async deleteCard(cardId: string): Promise<void> {
@@ -50,7 +52,7 @@ export class CardsService {
 
     Object.assign(card, update);
     const saved = await this.cardRepo.save(card);
-    return this.toCardDto(saved);
+    return this.cardViewMapper.toCardDto(saved);
   }
 
   async moveCard(dto: MoveCardRequest, user: RetroUser): Promise<RetroCard> {
@@ -66,23 +68,7 @@ export class CardsService {
     card.list = { id: dto.toListId } as any; // Cast to satisfy TypeORM
     const saved = await this.cardRepo.save(card);
 
-    return this.toCardDto(saved);
-  }
-
-  public toCardDto(card: RetroCardEntity): RetroCard {
-    const votesMap = new Map<string, number>();
-    for (const vote of card.votes) {
-      votesMap.set(vote.userId, vote.count);
-    }
-
-    return {
-      id: card.id,
-      clientId: card.clientId,
-      creatorId: card.creatorId,
-      listId: card.list.id,
-      message: card.message,
-      votes: Object.fromEntries(votesMap),
-    } as RetroCard;
+    return this.cardViewMapper.toCardDto(saved);
   }
 
   async saveCardVotes(cardId: string, userId: string, delta: number): Promise<void> {
@@ -99,17 +85,11 @@ export class CardsService {
     await this.voteRepo.save(vote);
   }
 
-  public toCardDtos(cards: RetroCardEntity[]): RetroCard[] {
-    return cards.map((card) => {
-      return this.toCardDto(card);
-    });
-  }
-
   async getCard(cardId: string): Promise<RetroCard> {
     const card = await this.cardRepo.findOneOrFail({
       where: { id: cardId },
       relations: { list: { board: true } },
     });
-    return this.toCardDto(card);
+    return this.cardViewMapper.toCardDto(card);
   }
 }

@@ -4,8 +4,7 @@ import { Repository } from 'typeorm';
 import { RetroListEntity } from './retro-list.entity';
 import { RetroUser } from '../users/retro-user.dto';
 import { RetroList } from './retro-list.dto';
-import { CardsService } from '../card/cards.service';
-import { RetroBoard } from '../retro-board.dto';
+import { ListViewMapper } from './list-view-mapper';
 
 @Injectable()
 export class ListService {
@@ -14,7 +13,7 @@ export class ListService {
   constructor(
     @InjectRepository(RetroListEntity)
     private readonly listRepo: Repository<RetroListEntity>,
-    private readonly cardsService: CardsService,
+    private readonly listViewMapper: ListViewMapper,
   ) {}
 
   async getBoardLists(boardId: string): Promise<RetroList[]> {
@@ -23,7 +22,7 @@ export class ListService {
         where: { board: { id: boardId } },
         relations: ['cards'],
       });
-      return entities.map((e) => this.toDto(e));
+      return entities.map((e) => this.listViewMapper.toDto(e));
     }
   }
 
@@ -42,7 +41,7 @@ export class ListService {
     });
 
     const saved = await this.listRepo.save(entity);
-    return this.toDto(saved);
+    return this.listViewMapper.toDto(saved);
   }
 
   async updateList(update: Partial<RetroList>, user: RetroUser): Promise<RetroList> {
@@ -57,24 +56,11 @@ export class ListService {
     if (update.order !== undefined) list.order = update.order;
 
     const saved = await this.listRepo.save(list);
-    return this.toDto(saved);
+    return this.listViewMapper.toDto(saved);
   }
 
   async deleteList(boardId: string, listId: string, user: RetroUser): Promise<void> {
     if (user.role !== 'facilitator' || user.boardId !== boardId) throw new ForbiddenException('Invalid Permissions');
     await this.listRepo.delete({ id: listId, board: { id: boardId } });
   }
-
-  private toDto(entity: RetroListEntity): RetroList {
-    return {
-      id: entity.id,
-      title: entity.title,
-      subtitle: entity.subtitle,
-      colour: entity.colour,
-      order: entity.order,
-      boardId: entity.board.id,
-      cards: entity.cards ? this.cardsService.toCardDtos(entity.cards) : [],
-    };
-  }
-
 }

@@ -13,12 +13,12 @@ export class DecisionService {
   ) {}
 
   async createDecision(description: string, user: RetroUser) {
-    const newAction = await this.decisionRepo.save({
+    const newDecision = await this.decisionRepo.save({
       description,
       createdBy: { id: user.id },
       board: { id: user.boardId },
     });
-    return this.toDecisionDto(newAction);
+    return this.toDecisionDto(newDecision);
   }
 
   async getAll(user: RetroUser) {

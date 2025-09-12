@@ -13,11 +13,19 @@ import { BoardService } from '../board/board.service';
 import { Logger } from '@nestjs/common';
 import { UserService } from '../board/users/user.service';
 import { RetroUser } from '../board/users/retro-user.dto';
-import { ActionGetEvent, BoardUpdatedEvent, StageChangedEvent, UserUpdatedPayload } from './model.dto';
+import {
+  ActionGetEvent,
+  BoardUpdatedEvent,
+  DecisionGetEvent,
+  StageChangedEvent,
+  UserUpdatedPayload,
+} from './model.dto';
 import { StageService } from '../board/stage/stage.service';
 import { ActionsService } from 'src/actions/actions.service';
 import { InviteService } from '../board/invite/invite.service';
 import { RetroAction } from '../actions/retro-action';
+import { DecisionService } from '../decision/decision.service';
+import { RetroDecision } from '../decision/retro.decision';
 
 @WebSocketGateway()
 export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -30,6 +38,7 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private userService: UserService,
     private stageService: StageService,
     private actionsService: ActionsService,
+    private decisionService: DecisionService,
     private inviteService: InviteService,
   ) {}
 
@@ -101,6 +110,11 @@ export class AuthGateway implements OnGatewayConnection, OnGatewayDisconnect {
     socket.emit('actions:get', {
       actions: allActions,
     } as ActionGetEvent);
+
+    const allDecisions: RetroDecision[] = await this.decisionService.getAll(user);
+    socket.emit('decisions:get', {
+      decisions: allDecisions,
+    } as DecisionGetEvent);
 
     socket.emit('board:updated', {
       board: board,

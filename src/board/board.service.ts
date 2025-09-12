@@ -2,10 +2,11 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as crypto from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { RetroStage } from '../types/stages';
 import { RetroBoard } from './retro-board.dto';
 import { RetroBoardEntity } from './retro-board.entity';
+import { BoardViewMapper } from './board-view-mapper';
 
 /**
  * This service manages the state transition between multiple stages. A stage is a stepping stone the users
@@ -32,6 +33,7 @@ export class BoardService {
     private eventEmitter: EventEmitter2,
     @InjectRepository(RetroBoardEntity)
     private readonly boardRepo: Repository<RetroBoardEntity>,
+    private readonly boardViewMapper: BoardViewMapper,
   ) {}
 
   async getBoard(boardId: string): Promise<RetroBoard> {
@@ -40,7 +42,7 @@ export class BoardService {
       this.logger.warn(`Board ${boardId} not found`);
       throw new NotFoundException(`Board ${boardId} not found`);
     }
-    return this.toDto(entity);
+    return this.boardViewMapper.toDto(entity);
   }
 
   async boardExists(boardId: string): Promise<boolean> {
@@ -54,7 +56,7 @@ export class BoardService {
     });
     const saved = await this.boardRepo.save(board);
     this.logger.log(`[Board: ${saved.id}] Created`);
-    return this.toDto(saved);
+    return this.boardViewMapper.toDto(saved);
   }
 
   async updateStage(boardId: string, stage: RetroStage): Promise<RetroBoard> {
@@ -62,23 +64,32 @@ export class BoardService {
     board.stage = stage;
     const updated = await this.boardRepo.save(board);
     this.eventEmitter.emit('stage.changed', { stage: updated.stage });
-    return this.toDto(updated);
+    return this.boardViewMapper.toDto(updated);
   }
 
   async updateBoard(boardId: string, updates: Partial<RetroBoard>): Promise<RetroBoard> {
-    const board = await this.boardRepo.findOneOrFail({ where: { id: boardId } });
-    const merged = this.boardRepo.merge(board, updates);
-    const saved = await this.boardRepo.save(merged);
+    const patch = this.toEntityPatch(updates); // returns DeepPartial<RetroBoardEntity>
+
+    const entity = await this.boardRepo.preload({ id: boardId, ...patch });
+    if (!entity) throw new NotFoundException(`Board ${boardId} not found`);
+    const saved = await this.boardRepo.save(entity);
     this.logger.log(`[Board: ${boardId}] Updated`);
-    return this.toDto(saved);
+    return this.boardViewMapper.toDto(saved);
   }
 
-  private toDto(entity: RetroBoardEntity): RetroBoard {
+  toEntityPatch(u: Partial<RetroBoard>): DeepPartial<RetroBoardEntity> {
     return {
-      id: entity.id,
-      createdDate: entity.createdDate,
-      stage: entity.stage,
-      intention: entity.intention,
+      stage: u.stage,
+      intention: u.intention ? ({ id: u.intention.id } as any) : undefined,
+      lists: u.lists
+        ? u.lists.map((l) => ({
+            id: l.id,
+            title: l.title,
+            subtitle: l.subtitle,
+            colour: l.colour,
+            order: l.order,
+          }))
+        : undefined,
     };
   }
 }
