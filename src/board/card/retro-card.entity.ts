@@ -24,4 +24,7 @@ export class RetroCardEntity {
 
   @ManyToOne(() => RetroListEntity, (list) => list.cards, { onDelete: 'CASCADE', eager: true })
   list: RetroListEntity;
+
+  @Column({ name: 'order_rank' })
+  orderRank: string;
 }

@@ -54,17 +54,10 @@ export interface CardUpdatedEvent {
 }
 
 export interface MoveCardRequest {
-  fromListId: string;
-  toListId: string;
   cardId: string;
-  targetIndex: number;
-}
-
-export interface CardMovedEvent {
-  cardId: string;
-  fromListId: string;
   toListId: string;
-  newListIndex: number;
+  belowCardId: string;
+  aboveCardId: string;
 }
 
 /**
@@ -72,8 +65,8 @@ export interface CardMovedEvent {
  * Lists
  *
  */
-export interface ListUpdatedEvent {
-  list: RetroList;
+export interface ListsUpdatedEvent {
+  lists: RetroList[];
 }
 
 export interface DeleteListRequest {

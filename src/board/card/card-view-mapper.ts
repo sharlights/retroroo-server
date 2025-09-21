@@ -19,6 +19,7 @@ export class CardViewMapper {
       listId: card.list.id,
       message: card.message,
       votes: Object.fromEntries(votesMap),
+      orderRank: card.orderRank,
     } as RetroCard;
   }
 

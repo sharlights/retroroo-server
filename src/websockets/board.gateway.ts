@@ -7,7 +7,6 @@ import {
   BoardUpdatedEvent,
   CardCreatedEvent,
   CardDeletedEvent,
-  CardMovedEvent,
   CardUpdatedEvent,
   CreateCardRequest,
   CreateListRequest,
@@ -17,7 +16,7 @@ import {
   DeleteListRequest,
   IntentSelectRequest,
   ListDeletedEvent,
-  ListUpdatedEvent,
+  ListsUpdatedEvent,
   MoveCardRequest,
   UpdateCardRequest,
   UpdateListRequest,
@@ -50,6 +49,7 @@ export class BoardGateway {
   async handleCreateCard(@ConnectedSocket() socket: Socket, @MessageBody() request: CreateCardRequest) {
     const user: RetroUser = socket.data.user;
     const card = await this.cardsService.createCard(request.listId, request.message, user, request.clientId);
+    this.logger.log(`[Board: ${user.boardId}] Card created: List: ${card.listId} - Rank: ${card.orderRank}`);
     this.server.to(user.boardId).emit('list:card:created', { card: card } as CardCreatedEvent);
   }
 
@@ -74,13 +74,19 @@ export class BoardGateway {
   @SubscribeMessage('list:card:move')
   async handleMoveCard(@ConnectedSocket() socket: Socket, @MessageBody() request: MoveCardRequest) {
     const user: RetroUser = socket.data.user;
-    const card = await this.cardsService.moveCard(request, user);
-    this.server.to(user.boardId).emit('list:card:moved', {
-      cardId: card.id,
-      fromListId: request.fromListId,
-      toListId: request.toListId,
-      newListIndex: request.targetIndex,
-    } as CardMovedEvent);
+
+    // All the cards between the old and new index require an update as their index will be changed.
+    const updatedCard = await this.cardsService.moveCard(
+      request.cardId,
+      request.toListId,
+      request.aboveCardId,
+      request.belowCardId,
+      user,
+    );
+
+    this.server.to(user.boardId).emit('list:card:updated', {
+      card: updatedCard,
+    } as CardUpdatedEvent);
   }
 
   @SubscribeMessage('list:card:vote')
@@ -128,7 +134,7 @@ export class BoardGateway {
       },
       user,
     );
-    this.server.to(request.boardId).emit('list:updated', { list: updatedList } as ListUpdatedEvent);
+    this.server.to(request.boardId).emit('lists:updated', { lists: [updatedList] } as ListsUpdatedEvent);
   }
 
   @SubscribeMessage('list:delete')

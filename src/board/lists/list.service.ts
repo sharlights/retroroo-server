@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { RetroListEntity } from './retro-list.entity';
 import { RetroUser } from '../users/retro-user.dto';
 import { RetroList } from './retro-list.dto';
@@ -63,4 +63,5 @@ export class ListService {
     if (user.role !== 'facilitator' || user.boardId !== boardId) throw new ForbiddenException('Invalid Permissions');
     await this.listRepo.delete({ id: listId, board: { id: boardId } });
   }
+
 }
