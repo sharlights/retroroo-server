@@ -19,7 +19,7 @@ import {
   DecisionGetEvent,
   StageChangedEvent,
   UserUpdatedPayload,
-} from './model.dto';
+} from './events.model.dto';
 import { StageService } from '../board/stage/stage.service';
 import { ActionsService } from 'src/actions/actions.service';
 import { InviteService } from '../board/invite/invite.service';

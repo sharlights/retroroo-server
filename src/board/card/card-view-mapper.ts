@@ -16,6 +16,7 @@ export class CardViewMapper {
       id: card.id,
       clientId: card.clientId,
       creatorId: card.creatorId,
+      boardId: card.board.id,
       listId: card.list.id,
       message: card.message,
       votes: Object.fromEntries(votesMap),

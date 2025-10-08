@@ -8,6 +8,7 @@ import { RetroVoteEntity } from './retro-card-vote.entity';
 import { CardViewMapper } from './card-view-mapper';
 import { RetroCardEntity } from './retro-card.entity';
 import { LexoRank } from 'lexorank';
+import { RetroBoardEntity } from '../retro-board.entity';
 
 @Injectable()
 export class CardsService {
@@ -32,6 +33,7 @@ export class CardsService {
     newCard.clientId = clientId ?? null;
     newCard.creatorId = user.id;
     newCard.message = message;
+    newCard.board = { id: user.boardId } as RetroBoardEntity;
     newCard.list = { id: listId } as Partial<RetroListEntity> as RetroListEntity;
     newCard.votes = [];
     newCard.orderRank = newRank.toString();
@@ -126,10 +128,9 @@ export class CardsService {
         },
       );
 
-      // finally, fetch with relations (safe, no lock needed)
       return await em.findOneOrFail(RetroCardEntity, {
         where: { id: card.id },
-        relations: { list: { board: true }, votes: true },
+        relations: { list: { board: true }, board: true, votes: true },
         loadEagerRelations: false,
       });
     });

@@ -7,9 +7,10 @@ import { AuthModule } from 'src/auth/auth.module';
 import { ActionModule } from '../actions/action.module';
 import { DecisionModule } from '../decision/decision.module';
 import { BoardGateway } from './board.gateway';
+import { IntentModule } from '../intent/intent.module';
 
 @Module({
-  imports: [BoardModule, AuthModule, ActionModule, DecisionModule],
+  imports: [BoardModule, AuthModule, ActionModule, DecisionModule, IntentModule],
   providers: [StageGateway, HeadspaceGateway, AuthGateway, BoardGateway],
 })
 export class WebsocketsModule {}

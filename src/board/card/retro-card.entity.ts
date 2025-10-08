@@ -1,6 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { RetroListEntity } from '../lists/retro-list.entity';
 import { RetroVoteEntity } from './retro-card-vote.entity';
+import { RetroBoardEntity } from '../retro-board.entity';
 
 @Entity('retro_card')
 export class RetroCardEntity {
@@ -15,6 +16,10 @@ export class RetroCardEntity {
 
   @Column()
   message: string;
+
+  @ManyToOne(() => RetroBoardEntity, { onDelete: 'CASCADE', eager: true })
+  @JoinColumn({ name: 'boardId' })
+  board: RetroBoardEntity;
 
   @OneToMany(() => RetroVoteEntity, (vote) => vote.card, {
     cascade: true,

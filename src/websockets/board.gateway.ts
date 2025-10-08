@@ -1,27 +1,19 @@
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger } from '@nestjs/common';
+import { Logger, UseGuards } from '@nestjs/common';
 import {
   ActionCreateRequest,
-  ActionUpdatedEvent,
-  BoardUpdatedEvent,
-  CardCreatedEvent,
-  CardDeletedEvent,
-  CardUpdatedEvent,
   CreateCardRequest,
   CreateListRequest,
   DecisionCreateRequest,
-  DecisionUpdatedEvent,
   DeleteCardRequest,
   DeleteListRequest,
-  IntentSelectRequest,
-  ListDeletedEvent,
-  ListsUpdatedEvent,
+  SelectIntentRequest,
   MoveCardRequest,
   UpdateCardRequest,
   UpdateListRequest,
   VoteForCardRequest,
-} from './model.dto';
+} from './request.model.dto';
 import { RetroUser } from '../board/users/retro-user.dto';
 import { CardsService } from '../board/card/cards.service';
 import { DecisionService } from '../decision/decision.service';
@@ -31,6 +23,21 @@ import { BoardService } from '../board/board.service';
 import { RetroIntent } from '../intent/retro-intent.dto';
 import { RetroAction } from '../actions/retro-action';
 import { TemplateService } from '../board/template/retro-template.service';
+import { RetroCard } from '../board/card/retro-card.dto';
+import {
+  ActionUpdatedEvent,
+  BoardUpdatedEvent,
+  CardCreatedEvent,
+  CardDeletedEvent,
+  CardUpdatedEvent,
+  DecisionUpdatedEvent,
+  ListDeletedEvent,
+  ListsUpdatedEvent,
+} from './events.model.dto';
+import { IntentService } from '../intent/intent.service';
+import { IsRole } from './guards/is-role.guard';
+import { BoardExists } from './guards/board-exists.service';
+import { CardBelongsToBoardGuard } from './guards/card/card-belongs-to-board-guard.service';
 
 @WebSocketGateway()
 export class BoardGateway {
@@ -43,34 +50,63 @@ export class BoardGateway {
     private readonly actionService: ActionsService,
     private readonly boardService: BoardService,
     private readonly templateService: TemplateService,
+    private readonly intentService: IntentService,
   ) {}
 
+  @UseGuards(BoardExists)
   @SubscribeMessage('list:card:create')
   async handleCreateCard(@ConnectedSocket() socket: Socket, @MessageBody() request: CreateCardRequest) {
     const user: RetroUser = socket.data.user;
     const card = await this.cardsService.createCard(request.listId, request.message, user, request.clientId);
-    this.logger.log(`[Board: ${user.boardId}] Card created: List: ${card.listId} - Rank: ${card.orderRank}`);
+    this.logger.log(`[Board: ${user.boardId}] Card created: Id: ${card.id} - Rank: ${card.orderRank}`);
     this.server.to(user.boardId).emit('list:card:created', { card: card } as CardCreatedEvent);
   }
 
   @SubscribeMessage('list:card:delete')
   async handleDeleteCard(@ConnectedSocket() socket: Socket, @MessageBody() request: DeleteCardRequest) {
     const user: RetroUser = socket.data.user;
+    const card: RetroCard = await this.cardsService.getCard(request.cardId);
+    if (!card) throw Error('Card not found');
+
+    const boardId = user.boardId;
+    const isOwner = user.id === card.creatorId;
+    const isFacilitator = user.role == 'facilitator';
+
+
+    if (card.boardId !== boardId) {
+      this.logger.warn(
+        `[Board: ${boardId}] User ${user.id} attempted to delete card ${card.id} which does not belong to their board.`,
+      );
+      throw new Error('Card not found in your board');
+    }
+
+    if (!isOwner && !isFacilitator) {
+      this.logger.warn(`[Board: ${boardId}] User ${user.id} attempted to delete card ${card.id} without permissions.`);
+      throw new Error('Invalid permissions to delete card');
+    }
+
     await this.cardsService.deleteCard(request.cardId);
     this.server.to(user.boardId).emit('list:card:deleted', {
       cardId: request.cardId,
     } as CardDeletedEvent);
   }
 
+  @UseGuards(BoardExists)
+  @UseGuards(CardBelongsToBoardGuard)
   @SubscribeMessage('list:card:update')
   async handleUpdateCard(@ConnectedSocket() socket: Socket, @MessageBody() request: UpdateCardRequest) {
     const user: RetroUser = socket.data.user;
-    const card = await this.cardsService.updateCard(request.cardId, { message: request.message }, user);
+
+    // Anyone can update a card.
+    const updatedCard = await this.cardsService.updateCard(request.cardId, { message: request.message }, user);
+
     this.server.to(user.boardId).emit('list:card:updated', {
-      card: card,
+      card: updatedCard,
     } as CardUpdatedEvent);
   }
 
+  @UseGuards(BoardExists)
+  @UseGuards(CardBelongsToBoardGuard)
   @SubscribeMessage('list:card:move')
   async handleMoveCard(@ConnectedSocket() socket: Socket, @MessageBody() request: MoveCardRequest) {
     const user: RetroUser = socket.data.user;
@@ -89,10 +125,14 @@ export class BoardGateway {
     } as CardUpdatedEvent);
   }
 
+  @UseGuards(BoardExists)
+  @UseGuards(CardBelongsToBoardGuard)
   @SubscribeMessage('list:card:vote')
   async handleVoteFor(@ConnectedSocket() socket: Socket, @MessageBody() request: VoteForCardRequest) {
     const user: RetroUser = socket.data.user;
     await this.cardsService.saveCardVotes(request.cardId, user.id, request.voteDelta);
+
+    //TODO - restrict number of votes per person
 
     const updatedCard = await this.cardsService.getCard(request.cardId);
     this.logger.log(`[Board: ${user.boardId}] User ${user.id} voted for card: ${updatedCard.id}`);
@@ -169,11 +209,20 @@ export class BoardGateway {
     this.server.to(user.boardId).emit('decision:created', { decision: newDecision } as DecisionUpdatedEvent);
   }
 
+  @UseGuards(IsRole('facilitator'))
   @SubscribeMessage('intent:select')
-  async handleIntentSelected(@ConnectedSocket() socket: Socket, @MessageBody() request: IntentSelectRequest) {
+  async handleIntentSelected(@ConnectedSocket() socket: Socket, @MessageBody() request: SelectIntentRequest) {
     this.logger.log('intent selected', request);
     const user: RetroUser = socket.data.user;
-    const selectedIntent: RetroIntent = request.selectedIntent;
+
+    const selectedIntent: RetroIntent = await this.intentService.getIntent(request.selectedIntent);
+    if (!selectedIntent) {
+      this.logger.warn(
+        `[Board: ${user.boardId}] User ${user.id} attempted to select intent ${request.selectedIntent} which does not exist.`,
+      );
+      throw new Error('Selected intent does not exist');
+    }
+
     const boardId: string = socket.data.boardId;
 
     // Generate the retro workflow based on the selected intent. This will create setup the content

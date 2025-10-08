@@ -4,7 +4,7 @@ import { JwtPayload } from '../auth/jtw.payload.interface';
 import { SocketErrorResponse } from './socket.core.messages';
 import { BoardService } from '../board/board.service';
 import { HeadspaceService } from '../board/headspace/headspace.service';
-import { ActionRequest, ExerciseRequest } from './model.dto';
+import { ActionRequest, ExerciseRequest } from './request.model.dto';
 import { RetroUser } from '../board/users/retro-user.dto';
 import { RetroStage } from '../types/stages';
 

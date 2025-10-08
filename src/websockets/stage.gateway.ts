@@ -2,15 +2,11 @@ import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSo
 import { Server, Socket } from 'socket.io';
 import { SocketErrorResponse } from './socket.core.messages';
 import { BoardService } from '../board/board.service';
-import {
-  ChangeStageRequest,
-  StageChangedEvent,
-  StageMetadataUpdatedEvent,
-  UpdateStageFinishedRequest,
-} from './model.dto';
+import { ChangeStageRequest, UpdateStageFinishedRequest } from './request.model.dto';
 import { Logger } from '@nestjs/common';
 import { StageService } from 'src/board/stage/stage.service';
 import { RetroUser } from '../board/users/retro-user.dto';
+import { StageChangedEvent, StageMetadataUpdatedEvent } from './events.model.dto';
 
 @WebSocketGateway()
 export class StageGateway {
