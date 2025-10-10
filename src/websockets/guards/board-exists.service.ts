@@ -4,7 +4,7 @@ import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 
 @Injectable()
-export class BoardExists implements CanActivate {
+export class BoardExistsAndUserIsConnected implements CanActivate {
   constructor(private readonly boardService: BoardService) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {

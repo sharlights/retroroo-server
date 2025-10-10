@@ -14,7 +14,7 @@ export class ActionsService {
 
   async createAction(description: string, user: RetroUser) {
     const newAction = await this.actionRepo.save({
-      description,
+      description: description.trim().slice(0, 2000), //TODO make this configurable
       createdBy: { id: user.id },
       board: { id: user.boardId },
     });

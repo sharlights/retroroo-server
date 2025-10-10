@@ -37,7 +37,11 @@ export class BoardService {
   ) {}
 
   async getBoard(boardId: string): Promise<RetroBoard> {
-    const entity = await this.boardRepo.findOne({ where: { id: boardId } });
+    const entity = await this.boardRepo.findOne({
+      where: { id: boardId },
+      relations: { lists: true, intention: true },
+      loadEagerRelations: false,
+    });
     if (!entity) {
       this.logger.warn(`Board ${boardId} not found`);
       throw new NotFoundException(`Board ${boardId} not found`);

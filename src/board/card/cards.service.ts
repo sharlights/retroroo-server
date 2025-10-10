@@ -85,7 +85,7 @@ export class CardsService {
   private async moveCardBelow(
     card: RetroCardEntity,
     toListId: string,
-    aboveCard: RetroCardEntity,
+    aboveCard: RetroCardEntity | null,
     belowCard: RetroCardEntity | null,
   ): Promise<RetroCardEntity> {
     // no-op if already positioned correctly in same list

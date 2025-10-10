@@ -12,7 +12,7 @@ import {
   IsIn,
   IsObject,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { RetroStage } from '../types/stages';
 
 // If your IDs are UUIDs, keep IsUUID; otherwise switch to IsString.
@@ -43,6 +43,7 @@ export class CreateCardRequest {
   @IsString()
   @IsNotEmpty()
   @MaxLength(2000)
+  @Transform(({ value }) => (value ?? '').toString().trim().normalize('NFC'))
   message!: string;
 }
 
@@ -178,6 +179,7 @@ export class ActionCreateRequest {
   @IsString()
   @IsNotEmpty()
   @MaxLength(2000)
+  @Transform(({ value }) => (value ?? '').toString().trim().normalize('NFC'))
   description!: string;
 }
 
@@ -186,6 +188,7 @@ export class DecisionCreateRequest {
   @IsString()
   @IsNotEmpty()
   @MaxLength(2000)
+  @Transform(({ value }) => (value ?? '').toString().trim().normalize('NFC'))
   description!: string;
 }
 

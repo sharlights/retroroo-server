@@ -4,14 +4,11 @@ import { Logger, UseGuards } from '@nestjs/common';
 import {
   ActionCreateRequest,
   CreateCardRequest,
-  CreateListRequest,
   DecisionCreateRequest,
   DeleteCardRequest,
-  DeleteListRequest,
-  SelectIntentRequest,
   MoveCardRequest,
+  SelectIntentRequest,
   UpdateCardRequest,
-  UpdateListRequest,
   VoteForCardRequest,
 } from './request.model.dto';
 import { RetroUser } from '../board/users/retro-user.dto';
@@ -31,13 +28,12 @@ import {
   CardDeletedEvent,
   CardUpdatedEvent,
   DecisionUpdatedEvent,
-  ListDeletedEvent,
-  ListsUpdatedEvent,
 } from './events.model.dto';
 import { IntentService } from '../intent/intent.service';
 import { IsRole } from './guards/is-role.guard';
-import { BoardExists } from './guards/board-exists.service';
+import { BoardExistsAndUserIsConnected } from './guards/board-exists.service';
 import { CardBelongsToBoardGuard } from './guards/card/card-belongs-to-board-guard.service';
+import { CardIsOwnerOrFacilitator } from './guards/card/card-is-owner-or-facilitator';
 
 @WebSocketGateway()
 export class BoardGateway {
@@ -53,37 +49,33 @@ export class BoardGateway {
     private readonly intentService: IntentService,
   ) {}
 
-  @UseGuards(BoardExists)
+  @UseGuards(BoardExistsAndUserIsConnected)
   @SubscribeMessage('list:card:create')
   async handleCreateCard(@ConnectedSocket() socket: Socket, @MessageBody() request: CreateCardRequest) {
     const user: RetroUser = socket.data.user;
+    // Check that the card belongs to the list.
+    const board = await this.boardService.getBoard(user.boardId);
+    const list = board.lists.find((l) => l.id === request.listId);
+    if (!list) {
+      this.logger.warn(
+        `[Board: ${board.id}] User ${socket.data.user.id} attempted to create a card in list ${request.listId} which does not exist.`,
+      );
+      throw new Error('List does not exist in your board');
+    }
+
     const card = await this.cardsService.createCard(request.listId, request.message, user, request.clientId);
+
+    // Ensure card exists in board
     this.logger.log(`[Board: ${user.boardId}] Card created: Id: ${card.id} - Rank: ${card.orderRank}`);
     this.server.to(user.boardId).emit('list:card:created', { card: card } as CardCreatedEvent);
   }
 
+  @UseGuards(BoardExistsAndUserIsConnected, CardBelongsToBoardGuard, CardIsOwnerOrFacilitator)
   @SubscribeMessage('list:card:delete')
   async handleDeleteCard(@ConnectedSocket() socket: Socket, @MessageBody() request: DeleteCardRequest) {
     const user: RetroUser = socket.data.user;
     const card: RetroCard = await this.cardsService.getCard(request.cardId);
     if (!card) throw Error('Card not found');
-
-    const boardId = user.boardId;
-    const isOwner = user.id === card.creatorId;
-    const isFacilitator = user.role == 'facilitator';
-
-
-    if (card.boardId !== boardId) {
-      this.logger.warn(
-        `[Board: ${boardId}] User ${user.id} attempted to delete card ${card.id} which does not belong to their board.`,
-      );
-      throw new Error('Card not found in your board');
-    }
-
-    if (!isOwner && !isFacilitator) {
-      this.logger.warn(`[Board: ${boardId}] User ${user.id} attempted to delete card ${card.id} without permissions.`);
-      throw new Error('Invalid permissions to delete card');
-    }
 
     await this.cardsService.deleteCard(request.cardId);
     this.server.to(user.boardId).emit('list:card:deleted', {
@@ -91,13 +83,11 @@ export class BoardGateway {
     } as CardDeletedEvent);
   }
 
-  @UseGuards(BoardExists)
-  @UseGuards(CardBelongsToBoardGuard)
+  @UseGuards(CardBelongsToBoardGuard, BoardExistsAndUserIsConnected, CardIsOwnerOrFacilitator)
   @SubscribeMessage('list:card:update')
   async handleUpdateCard(@ConnectedSocket() socket: Socket, @MessageBody() request: UpdateCardRequest) {
     const user: RetroUser = socket.data.user;
 
-    // Anyone can update a card.
     const updatedCard = await this.cardsService.updateCard(request.cardId, { message: request.message }, user);
 
     this.server.to(user.boardId).emit('list:card:updated', {
@@ -105,11 +95,42 @@ export class BoardGateway {
     } as CardUpdatedEvent);
   }
 
-  @UseGuards(BoardExists)
-  @UseGuards(CardBelongsToBoardGuard)
+  @UseGuards(BoardExistsAndUserIsConnected, CardBelongsToBoardGuard)
   @SubscribeMessage('list:card:move')
   async handleMoveCard(@ConnectedSocket() socket: Socket, @MessageBody() request: MoveCardRequest) {
     const user: RetroUser = socket.data.user;
+
+    const board = await this.boardService.getBoard(user.boardId);
+
+    // Check list
+    const list = board.lists.find((l) => l.id === request.toListId);
+    if (!list) {
+      this.logger.warn(
+        `[Board: ${board.id}] User ${user.id} attempted to move a card to list ${request.toListId} which does not exist.`,
+      );
+      throw new Error('List does not exist in your board');
+    }
+
+    // Check above card and below card are in the same list or null
+    if (request.aboveCardId) {
+      const aboveCard = await this.cardsService.getCard(request.aboveCardId);
+      if (aboveCard.listId !== list.id) {
+        this.logger.warn(
+          `[Board: ${board.id}] User ${user.id} attempted to move a card above card ${request.aboveCardId} which is not in list ${list.id}.`,
+        );
+        throw new Error('Above card is not in the target list');
+      }
+    }
+
+    if (request.belowCardId) {
+      const belowCard = await this.cardsService.getCard(request.belowCardId);
+      if (belowCard.listId !== list.id) {
+        this.logger.warn(
+          `[Board: ${board.id}] User ${user.id} attempted to move a card below card ${request.belowCardId} which is not in list ${list.id}.`,
+        );
+        throw new Error('Below card is not in the target list');
+      }
+    }
 
     // All the cards between the old and new index require an update as their index will be changed.
     const updatedCard = await this.cardsService.moveCard(
@@ -125,7 +146,7 @@ export class BoardGateway {
     } as CardUpdatedEvent);
   }
 
-  @UseGuards(BoardExists)
+  @UseGuards(BoardExistsAndUserIsConnected)
   @UseGuards(CardBelongsToBoardGuard)
   @SubscribeMessage('list:card:vote')
   async handleVoteFor(@ConnectedSocket() socket: Socket, @MessageBody() request: VoteForCardRequest) {
@@ -141,51 +162,7 @@ export class BoardGateway {
     } as CardUpdatedEvent);
   }
 
-  // List Events
-  @SubscribeMessage('list:create')
-  async handleCreateList(@ConnectedSocket() socket: Socket, @MessageBody() request: CreateListRequest) {
-    const user: RetroUser = socket.data.user;
-    const list = this.listService.createList(
-      {
-        title: request.title,
-        subtitle: request.subtitle,
-        boardId: request.boardId,
-        order: request.order,
-        colour: request.colour,
-        cards: [],
-      },
-      user,
-    );
-    this.server.to(request.boardId).emit('list:created', list);
-  }
-
-  @SubscribeMessage('list:update')
-  async handleUpdateList(@ConnectedSocket() socket: Socket, @MessageBody() request: UpdateListRequest) {
-    const user: RetroUser = socket.data.user;
-
-    const updatedList = await this.listService.updateList(
-      {
-        id: request.listId,
-        title: request.title,
-        subtitle: request.subtitle,
-        boardId: user.boardId,
-        order: request.order,
-        colour: request.colour,
-      },
-      user,
-    );
-    this.server.to(request.boardId).emit('lists:updated', { lists: [updatedList] } as ListsUpdatedEvent);
-  }
-
-  @SubscribeMessage('list:delete')
-  async handleDeleteList(@ConnectedSocket() socket: Socket, @MessageBody() request: DeleteListRequest) {
-    const user: RetroUser = socket.data.user;
-    await this.listService.deleteList(user.boardId, request.listId, user);
-    this.server.to(user.boardId).emit('list:deleted', {
-      listId: request.listId,
-    } as ListDeletedEvent);
-  }
-
+  @UseGuards(BoardExistsAndUserIsConnected)
   @SubscribeMessage('lists:get')
   async handleGetState(@ConnectedSocket() socket: Socket) {
     const boardId: string = socket.data.boardId;
@@ -193,6 +170,7 @@ export class BoardGateway {
     return await this.listService.getBoardLists(boardId);
   }
 
+  @UseGuards(BoardExistsAndUserIsConnected)
   @SubscribeMessage('action:create')
   async handleCreateAction(@ConnectedSocket() socket: Socket, @MessageBody() request: ActionCreateRequest) {
     this.logger.log('Action create card', request);
@@ -201,6 +179,7 @@ export class BoardGateway {
     this.server.to(user.boardId).emit('action:created', { action: newAction } as ActionUpdatedEvent);
   }
 
+  @UseGuards(BoardExistsAndUserIsConnected)
   @SubscribeMessage('decision:create')
   async handleCreateDecision(@ConnectedSocket() socket: Socket, @MessageBody() request: DecisionCreateRequest) {
     this.logger.log('decision created', request);
@@ -209,6 +188,7 @@ export class BoardGateway {
     this.server.to(user.boardId).emit('decision:created', { decision: newDecision } as DecisionUpdatedEvent);
   }
 
+  @UseGuards(BoardExistsAndUserIsConnected)
   @UseGuards(IsRole('facilitator'))
   @SubscribeMessage('intent:select')
   async handleIntentSelected(@ConnectedSocket() socket: Socket, @MessageBody() request: SelectIntentRequest) {
